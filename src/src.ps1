@@ -80,7 +80,7 @@ $keyMap = @{
     "F12"        = 0x7B  
 }
 
-$instrumentaKeysVersion = "0.13"
+$instrumentaKeysVersion = "0.14"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -246,21 +246,18 @@ function Import-ShortcutsFromGitHub {
             return
         }
 
-        # Create selection form
         $form = New-Object System.Windows.Forms.Form
         $form.Text = "Select CSV File"
         $form.Width = 400
         $form.Height = 300
         $form.StartPosition = "CenterScreen"
 
-        # Create ListBox for file selection
         $listBox = New-Object System.Windows.Forms.ListBox
         $listBox.Dock = "Fill"
         foreach ($file in $csvFiles) {
             $listBox.Items.Add($file.name)
         }
 
-        # Create select button
         $selectButton = New-Object System.Windows.Forms.Button
         $selectButton.Text = "Import"
         $selectButton.Dock = "Bottom"
@@ -273,11 +270,15 @@ function Import-ShortcutsFromGitHub {
 
             $downloadUrl = ($csvFiles | Where-Object { $_.name -eq $selectedFileName }).download_url
             Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Downloading: $selectedFileName from GitHub..."
-            $csvData = Invoke-WebRequest -Uri $downloadUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+            
+            $tempCsvPath = "$env:temp\shortcuts_import.csv"
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $tempCsvPath
 
-            # Load into editor
+            $csvData = Get-Content -Path $tempCsvPath
+            Remove-Item -Path $tempCsvPath -Force 
+
             $grid.Rows.Clear()
-            foreach ($entry in $csvData -split "`r`n") {
+            foreach ($entry in $csvData) {
                 $splitEntry = $entry -split ","
                 if ($splitEntry.Count -eq 2) {
                     $grid.Rows.Add($splitEntry[0].Trim(), $splitEntry[1].Trim()) | Out-Null
@@ -289,7 +290,6 @@ function Import-ShortcutsFromGitHub {
             $form.Close()
         })
 
-        # Add controls
         $form.Controls.Add($listBox)
         $form.Controls.Add($selectButton)
 
@@ -302,8 +302,6 @@ function Import-ShortcutsFromGitHub {
         Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to import shortcuts from GitHub!"
     }
 }
-
-
 
 function Start-ShortcutEditor {
     Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Launching shortcut editor..."
