@@ -1,0 +1,10 @@
+Ctrl+Shift+Alt+S,ObjectsSwapPosition
+Ctrl+Shift+Alt+L,ObjectsAlignLefts
+Ctrl+Shift+Alt+T,ObjectsAlignTops
+Ctrl+Shift+Alt+R,ObjectsAlignRights
+Ctrl+Shift+Alt+B,ObjectsAlignBottoms
+Ctrl+Shift+Alt+E,ObjectsAlignCenters
+Ctrl+Shift+Alt+M,ObjectsAlignMiddles
+Ctrl+Shift+Alt+H,ObjectsDistributeHorizontally
+Ctrl+Shift+Alt+V,ObjectsDistributeVertically
+Alt+Q,GenerateStickyNote
