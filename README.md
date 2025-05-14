@@ -4,7 +4,7 @@ Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://
 [@iappyx](https://github.com/iappyx)
 
 ## Features
-- **Fully configurable:** Easily customize shortcuts in the CSV file to match your workflow.
+- **Fully configurable:** Easily customize shortcuts in the built-in editor to match your workflow (or import shortcut-files created by others!)
 - **Runs independently:** Instrumenta Keys works alongside Instrumenta without modifying its core functionality.
 - **Compatible with other VBA projects:** Designed to integrate with any VBA-based automation, not just Instrumenta.
 
