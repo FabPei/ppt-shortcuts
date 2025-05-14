@@ -24,13 +24,17 @@ Instrumenta Keys is a **PowerShell script** and does not require administrative 
 
 ### Windows Installation
 1. **Download the binary:** [Instrumenta Keys.exe](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/Instrumenta%20Keys.exe)
-2. **Download the shortcut configuration file:** [shortcuts.csv](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/shortcuts.csv) (Right-click the link and select "Save As" to download the file)
-3. *Optional:* Open `shortcuts.csv` and customize your shortcuts. Instructions and a full list of available macros in Instrumenta can be found [here](https://github.com/iappyx/Instrumenta-Keys/blob/main/instrumenta_macros.md)
-5. Run the binary. It will automatically **minimize to the system tray** after a few seconds. Enjoy your shortcuts!
-6. To open it again, **click the Instrumenta Keys icon** in the system tray. If you click the icon again it will hide again.
+2. Run the binary. It will automatically **generate a shortcut file for you** and **minimize to the system tray** after a few seconds. Enjoy your shortcuts!
+3. To open it again, **click the Instrumenta Keys icon** in the system tray. If you click the icon again it will hide again.
 
 Note: A security notice may appear when running the binary, please refer to [these](https://support.microsoft.com/en-gb/topic/a-potentially-dangerous-macro-has-been-blocked-0952faa0-37e7-4316-b61d-5b5ed6024216) instructions from Microsoft to unblock Instrumenta Keys: (1) Open Windows File Explorer and go to the folder where you saved the file; (2) Right-click the file and choose Properties from the context menu; (3) At the bottom of the General tab, select the Unblock checkbox and select OK.
-   
+
+### How to load shortcuts
+Shortcuts in Instrumenta Keys are stored in the `shortcuts.csv` file. If this file is missing when you launch Instrumenta Keys, a default version will be created automatically. You can manage and customize your shortcuts using the Shortcut Editor, which you can open in PowerPoint by pressing CTRL+SHIFT+ALT+Q. This editor allows you to modify your shortcuts, import or export shortcut files, and even load shortcut configurations directly from this GitHub page. This makes it easy to use shortcut files shared by others, such as sets tailored to specific consultancy firm standards.
+Instructions and a full list of available macros in Instrumenta can be found [here](https://github.com/iappyx/Instrumenta-Keys/blob/main/instrumenta_macros.md)
+
+![image](https://github.com/user-attachments/assets/449c14ab-799e-4377-a249-f318118baddb)
+
 ## How to Build from Source
 Building your own Instrumenta Keys is very simple:
 
@@ -47,5 +51,5 @@ Building your own Instrumenta Keys is very simple:
 I am happy to receive feature requests and code contributions! Let's make the best toolbar together. For feature requests please create new issue and label it as an enhancement (https://github.com/iappyx/Instrumenta/issues/new/choose). 
 
 - If you want to contribute, please make sure that the code can be freely used as open source code. Please only update the files in /src/. For security reasons I will not accept updated .exe files.
-- If you want to share your csv-file, please add it to /shared-shortcuts/
+- If you want to share your shortcut csv-file, please add it to /shared-shortcuts/
 - If you like this Instrumenta & Instrumenta Keys, please let me and the community know how you are using this in your daily work: https://github.com/iappyx/Instrumenta/discussions/5
