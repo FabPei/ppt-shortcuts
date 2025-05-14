@@ -1,9 +1,9 @@
 # Instrumenta Macro References
 
-This document provides a list of **macro references** of Instrumenta that can be used in the `shortcuts.csv` file for configuring **keyboard shortcuts** in Instrumenta Keys.
+This document provides a list of **macro references** of Instrumenta that can be used in the **built-in** Shortcut Editor (or directly in the `shortcuts.csv` file) for configuring **keyboard shortcuts** in Instrumenta Keys.
 
 ## Supported Shortcut Keys
-The **shortcuts.csv** file allows for a combination of the following keys:
+The keyboard shortcuts allow for a combination of the following keys:
 
 ### **Modifier Keys**
 - `Ctrl`
@@ -13,8 +13,17 @@ The **shortcuts.csv** file allows for a combination of the following keys:
 ### **Letter Keys**
 - `A` to `Z`
 
+### **Function Keys**
+- `F1` to `F12`
+
 ### **Special Keys**
+- `Space`
+- `Tab`
+- `Backspace`
+- `Insert`
 - `Del` (Delete)
+- `Enter`
+- `Esc`
 
 ### **Navigation Keys**
 - `Up` (Arrow Up)
@@ -22,14 +31,21 @@ The **shortcuts.csv** file allows for a combination of the following keys:
 - `Left` (Arrow Left)
 - `Right` (Arrow Right)
 
+### **Additional Keys**
+- `Home`
+- `End`
+- `PageUp`
+- `PageDown`
+
 ---
 
-## How to Use
-To assign a shortcut to a macro, **edit the `shortcuts.csv` file** and specify:
-- **Shortcut key combination**
+## How to use 
+To assign a shortcut to a macro, **use the built-in** Shortcut Editor (which you can open in PowerPoint by pressing CTRL+SHIFT+ALT+Q) or **edit the `shortcuts.csv` file** manually and specify:
+- **Shortcut key combination** (with `+` between the different keys)
 - **Macro reference** (from the table below)
 
 Examples:
+- Ctrl+Shift+Alt+Q,InstrumentaKeysEditor
 - Ctrl+Shift+Alt+S,ObjectsSwapPosition
 - Ctrl+Shift+Alt+L,ObjectsAlignLefts
 - Ctrl+Shift+Alt+T,ObjectsAlignTops
@@ -41,12 +57,17 @@ Examples:
 - Ctrl+Shift+Alt+V,ObjectsDistributeVertically
 - Alt+Q,GenerateStickyNote
 
+![image](https://github.com/user-attachments/assets/ffea3f59-6523-49e2-97e4-230f373e8344)
+
+
 ---
 
 ## Macro List
+Below is the list of Instrumenta macro references you can use:
 
 | Macro Description                                         | Macro Reference                  |
 |-----------------------------------------------------------|----------------------------------|
+| Open Instrumenta Keys Shortcut Editor | InstrumentaKeysEditor | 
 | Copy selected slides to slide library | AddSelectedSlidesToLibraryFile | 
 | Anonymize all/selected slides with Lorem Ipsum | AnonymizeWithLoremIpsum | 
 | Apply same crop to selected pictures | ApplySameCropToSelectedImages | 
