@@ -1,3 +1,4 @@
+﻿Ctrl+Shift+Alt+Q,InstrumentaKeysEditor
 Ctrl+Shift+Alt+S,ObjectsSwapPosition
 Ctrl+Shift+Alt+L,ObjectsAlignLefts
 Ctrl+Shift+Alt+T,ObjectsAlignTops
@@ -7,4 +8,8 @@ Ctrl+Shift+Alt+E,ObjectsAlignCenters
 Ctrl+Shift+Alt+M,ObjectsAlignMiddles
 Ctrl+Shift+Alt+H,ObjectsDistributeHorizontally
 Ctrl+Shift+Alt+V,ObjectsDistributeVertically
+Ctrl+Alt+Left,MoveTableColumnLeft
+Ctrl+Alt+Right,MoveTableColumnRight
+Ctrl+Alt+Up,MoveTableRowUp
+Ctrl+Alt+Down,MoveTableRowDown
 Alt+Q,GenerateStickyNote

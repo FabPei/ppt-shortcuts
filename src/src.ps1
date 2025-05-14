@@ -39,23 +39,48 @@ public class WindowHelper {
 
     [DllImport("user32.dll")]
     public static extern int ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
 }
 "@ -Language CSharp
 
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
 
 $keyMap = @{
-    "Ctrl"  = 0x11
-    "Shift" = 0x10
-    "Alt"   = 0x12
-    "Del"   = 0x2E
-    "Up"    = 0x26
-    "Down"  = 0x28
-    "Left"  = 0x25
-    "Right" = 0x27
+    "Ctrl"       = 0x11
+    "Shift"      = 0x10
+    "Alt"        = 0x12
+    "Del"        = 0x2E
+    "Up"         = 0x26
+    "Down"       = 0x28
+    "Left"       = 0x25
+    "Right"      = 0x27
+    "Esc"        = 0x1B
+    "Enter"      = 0x0D
+    "Tab"        = 0x09
+    "Space"      = 0x20
+    "Backspace"  = 0x08
+    "PageUp"     = 0x21
+    "PageDown"   = 0x22
+    "Home"       = 0x24
+    "End"        = 0x23
+    "Insert"     = 0x2D
+    "F1"         = 0x70
+    "F2"         = 0x71
+    "F3"         = 0x72
+    "F4"         = 0x73
+    "F5"         = 0x74
+    "F6"         = 0x75
+    "F7"         = 0x76
+    "F8"         = 0x77
+    "F9"         = 0x78
+    "F10"        = 0x79
+    "F11"        = 0x7A
+    "F12"        = 0x7B  
 }
 
-$instrumentaKeysVersion = "0.12"
+$instrumentaKeysVersion = "0.13"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -73,57 +98,324 @@ Write-Host ""
 
 $shortcuts = @{}
 $friendlyShortcuts = @{}
-$shortcutList = @()
+$global:shortcutList = New-Object System.Collections.ArrayList
 $csvPath = "shortcuts.csv"
-Write-Host "Loading $csvPath..."
 
+if (-Not (Test-Path $csvPath)) {
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Shortcuts file missing. Creating default configuration..."
+    
+    $defaultShortcuts = @(
+        "Ctrl+Shift+Alt+Q,InstrumentaKeysEditor"
+        "Ctrl+Shift+Alt+S,ObjectsSwapPosition"
+        "Ctrl+Shift+Alt+L,ObjectsAlignLefts"
+        "Ctrl+Shift+Alt+T,ObjectsAlignTops"
+        "Ctrl+Shift+Alt+R,ObjectsAlignRights"
+        "Ctrl+Shift+Alt+B,ObjectsAlignBottoms"
+        "Ctrl+Shift+Alt+E,ObjectsAlignCenters"
+        "Ctrl+Shift+Alt+M,ObjectsAlignMiddles"
+        "Ctrl+Shift+Alt+H,ObjectsDistributeHorizontally"
+        "Ctrl+Shift+Alt+V,ObjectsDistributeVertically"
+        "Ctrl+Alt+Left,MoveTableColumnLeft"
+        "Ctrl+Alt+Right,MoveTableColumnRight"
+        "Ctrl+Alt+Up,MoveTableRowUp"
+        "Ctrl+Alt+Down,MoveTableRowDown"
+        "Alt+Q,GenerateStickyNote"
+    )
 
-if (Test-Path $csvPath) {
-    $csvData = Import-Csv -Path $csvPath -Header "Key", "Macro"
+    $defaultShortcuts | Out-File -FilePath $csvPath -Encoding UTF8
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Default shortcuts saved in '$csvPath'."
+}
 
-    foreach ($entry in $csvData) {
-        if ($entry.Key -and $entry.Macro) {
-            $keyCombo = $entry.Key -split '\+'
-            $virtualKeys = @()
-            
-            $shortcutList += [PSCustomObject]@{
-            Shortcut = $entry.Key
-            Macro    = $entry.Macro
+function Reload-ShortcutSettings {
+
+    $newShortcutList = New-Object System.Collections.ArrayList
+
+    $shortcuts.Clear()
+    $friendlyShortcuts.Clear()
+
+    if (Test-Path $csvPath) {
+        $csvData = Import-Csv -Path $csvPath -Header "Key", "Macro"
+
+        foreach ($entry in $($csvData)) {
+
+            if ($entry.Key -and $entry.Macro) {
+                $keyCombo = $entry.Key -split '\+'
+                $virtualKeys = @()
+
+                foreach ($key in $keyCombo) {
+                    if ($keyMap.ContainsKey($key)) {
+                        $virtualKeys += $keyMap[$key]
+                    } else {
+                        try {
+                            $virtualKeys += [int][char]$key
+                        } catch {
+                            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to process key '$key' in shortcut '$keyCombo'."
+                        }
+                    }
+                }
+
+                $macroName = $entry.Macro.Trim()
+                if ($macroName -ne "") {
+                    $keyIdentifier = $virtualKeys -join " "
+                    $shortcuts[$keyIdentifier] = $macroName
+                    $friendlyShortcuts[$keyIdentifier] = $entry.Key
+
+                    $newShortcutList.Add([PSCustomObject]@{
+                        Shortcut = $entry.Key
+                        Macro    = $macroName
+                    }) | Out-Null
+                }
+            } else {
+                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Missing key or macro in CSV entry."
+            }
+        }
+    } else {
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: CSV file not found!"
+        exit
+    }
+
+    $global:shortcutList = $newShortcutList
+
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Shortcut settings loaded"
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Available shortcuts:$($newShortcutList.count)"
+    $newShortcutList | Format-Table -AutoSize | Out-Host
+
+   
+}
+
+Reload-ShortcutSettings
+
+function Export-Shortcuts {
+    $saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+    $saveFileDialog.InitialDirectory = [System.Environment]::GetFolderPath("Desktop")
+    $saveFileDialog.Filter = "CSV Files (*.csv)|*.csv"
+    $saveFileDialog.Title = "Save Shortcuts As"
+
+    if ($saveFileDialog.ShowDialog() -eq "OK") {
+        $exportPath = $saveFileDialog.FileName
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exporting shortcuts to: $exportPath"
+
+        $newData = New-Object System.Collections.ArrayList  
+        foreach ($row in $grid.Rows) {
+            if ($row.Cells[0].Value -and $row.Cells[1].Value) {
+                $newData.Add("$($row.Cells[0].Value),$($row.Cells[1].Value)") | Out-Null 
+            }
+        }
+
+        $newData | Out-File $exportPath -Encoding utf8
+        [System.Windows.Forms.MessageBox]::Show("Shortcuts saved successfully!", "Export Complete")
+    }
+}
+
+function Import-Shortcuts {
+    $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+    $openFileDialog.InitialDirectory = [System.Environment]::GetFolderPath("Desktop")
+    $openFileDialog.Filter = "CSV Files (*.csv)|*.csv"
+    $openFileDialog.Title = "Select Shortcut File"
+
+    if ($openFileDialog.ShowDialog() -eq "OK") {
+        $importPath = $openFileDialog.FileName
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Importing shortcuts from: $importPath"
+        
+        if (Test-Path $importPath) {
+            $csvData = Get-Content -Path $importPath
+            $grid.Rows.Clear()  
+
+            foreach ($entry in $csvData) {
+                $splitEntry = $entry -split ","
+                if ($splitEntry.Count -eq 2) {
+                    $grid.Rows.Add($splitEntry[0].Trim(), $splitEntry[1].Trim()) | Out-Null
+                }
+            }
+        } else {
+            [System.Windows.Forms.MessageBox]::Show("Error: Could not find the selected file!", "Import Failed")
+        }
+    }
+}
+
+function Import-ShortcutsFromGitHub {
+    $repoUrl = "https://api.github.com/repos/iappyx/Instrumenta-Keys/contents/shared-shortcuts/"
+
+    try {
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Fetching CSV files from GitHub..."
+        $files = Invoke-RestMethod -Uri $repoUrl
+        $csvFiles = $files | Where-Object { $_.name -match "\.csv$" }
+
+        if ($csvFiles.Count -eq 0) {
+            [System.Windows.Forms.MessageBox]::Show("No CSV files found in GitHub folder!", "Import Failed")
+            return
+        }
+
+        # Create selection form
+        $form = New-Object System.Windows.Forms.Form
+        $form.Text = "Select CSV File"
+        $form.Width = 400
+        $form.Height = 300
+        $form.StartPosition = "CenterScreen"
+
+        # Create ListBox for file selection
+        $listBox = New-Object System.Windows.Forms.ListBox
+        $listBox.Dock = "Fill"
+        foreach ($file in $csvFiles) {
+            $listBox.Items.Add($file.name)
+        }
+
+        # Create select button
+        $selectButton = New-Object System.Windows.Forms.Button
+        $selectButton.Text = "Import"
+        $selectButton.Dock = "Bottom"
+        $selectButton.Add_Click({
+            $selectedFileName = $listBox.SelectedItem
+            if (-not $selectedFileName) {
+                [System.Windows.Forms.MessageBox]::Show("Please select a file", "Error")
+                return
             }
 
-            foreach ($key in $keyCombo) {
-                if ($keyMap.ContainsKey($key)) {
-                    $virtualKeys += $keyMap[$key]
-                } else {
-                    try {
-                        $virtualKeys += [int][char]$key 
-                    } catch {
-                        Write-Host "Error: Invalid key '$key' in CSV."
-                    }
+            $downloadUrl = ($csvFiles | Where-Object { $_.name -eq $selectedFileName }).download_url
+            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Downloading: $selectedFileName from GitHub..."
+            $csvData = Invoke-WebRequest -Uri $downloadUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+
+            # Load into editor
+            $grid.Rows.Clear()
+            foreach ($entry in $csvData -split "`r`n") {
+                $splitEntry = $entry -split ","
+                if ($splitEntry.Count -eq 2) {
+                    $grid.Rows.Add($splitEntry[0].Trim(), $splitEntry[1].Trim()) | Out-Null
                 }
             }
 
-            $macroName = $entry.Macro.Trim()
-            if ($macroName -ne "") {
+            [System.Windows.Forms.MessageBox]::Show("Imported $selectedFileName successfully!", "Import complete")
+            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Imported: $selectedFileName"
+            $form.Close()
+        })
 
-                $keyIdentifier = $virtualKeys -join " "
-                $shortcuts[$keyIdentifier] = $macroName
-                $friendlyShortcuts[$keyIdentifier] = $entry.Key
-                # Write-Host "Enabled shortcut $($entry.Key) for macro $macroName"
-            } else {
-                Write-Host "Warning: Macro name is empty for shortcut $($entry.Key) ($keyIdentifier)"
-            }
-        } else {
-            Write-Host "Error: Missing key or macro in CSV entry."
-        }
+        # Add controls
+        $form.Controls.Add($listBox)
+        $form.Controls.Add($selectButton)
+
+        $form.TopMost = $true
+        $exePath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+        $form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exePath)
+        $form.ShowDialog()
+        
+    } catch {
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to import shortcuts from GitHub!"
     }
-} else {
-    Write-Host "Error: CSV file not found!"
-    exit
 }
 
-Write-Host ""
-$shortcutList | Format-Table -AutoSize
+
+
+function Start-ShortcutEditor {
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Launching shortcut editor..."
+    
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Shortcut editor"
+    $form.Width = 700
+    $form.Height = 400
+    $form.StartPosition = "CenterScreen"
+    $form.TopMost = $true 
+
+    $mainPanel = New-Object System.Windows.Forms.Panel
+    $mainPanel.Dock = "Fill"
+
+    $gridPanel = New-Object System.Windows.Forms.Panel
+    $gridPanel.Dock = "Fill"
+    $gridPanel.Padding = New-Object System.Windows.Forms.Padding(20)
+
+    $grid = New-Object System.Windows.Forms.DataGridView
+    $grid.Dock = "Fill"
+    $grid.AutoGenerateColumns = $false
+
+    $colShortcut = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+    $colShortcut.HeaderText = "Shortcut"
+    $colShortcut.AutoSizeMode = "Fill"
+
+    $colMacro = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
+    $colMacro.HeaderText = "Macro"
+    $colMacro.AutoSizeMode = "Fill"
+
+    $grid.Columns.Add($colShortcut) | Out-Null
+    $grid.Columns.Add($colMacro) | Out-Null
+
+    if (Test-Path $csvPath) {
+        $csvData = Get-Content -Path $csvPath
+        foreach ($entry in $($csvData)) {
+            $splitEntry = $entry -split ","
+            if ($splitEntry.Count -eq 2) {
+                $grid.Rows.Add($splitEntry[0].Trim(), $splitEntry[1].Trim()) | Out-Null
+            }
+        }
+    }
+
+
+    $gridPanel.Controls.Add($grid)
+    $buttonPanel = New-Object System.Windows.Forms.Panel
+    $buttonPanel.Dock = "Bottom"
+    $buttonPanel.Height = 60
+   
+    $saveButton = New-Object System.Windows.Forms.Button
+    $saveButton.Text = "Save Changes"
+    $saveButton.Width = 120
+    $saveButton.Location = New-Object System.Drawing.Point(410, 5)
+    $saveButton.Anchor = "Bottom, Left"
+
+    $saveButton.Add_Click({
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Saving shortcut changes..."
+        $newData = New-Object System.Collections.ArrayList  
+        
+        foreach ($row in $grid.Rows) {
+            if ($row.Cells[0].Value -and $row.Cells[1].Value) {
+                $newData.Add("$($row.Cells[0].Value),$($row.Cells[1].Value)") | Out-Null 
+            }
+        }
+
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Writing shortcuts to CSV file."
+        $newData | Out-File $csvPath -Encoding utf8
+        
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Closing editor window."
+        $form.Close() | Out-Null
+        $grid.Dispose() | Out-Null
+        Start-Sleep -Milliseconds 500  
+        Reload-ShortcutSettings
+    })
+
+    $importButton = New-Object System.Windows.Forms.Button
+    $importButton.Text = "Import Shortcuts"
+    $importButton.Width = 120
+    $importButton.Location = New-Object System.Drawing.Point(20, 5)
+    $importButton.Anchor = "Bottom, Left"
+    $importButton.Add_Click({ Import-Shortcuts })
+
+    $exportButton = New-Object System.Windows.Forms.Button
+    $exportButton.Text = "Export Shortcuts"
+    $exportButton.Width = 120
+    $exportButton.Location = New-Object System.Drawing.Point(150, 5)
+    $exportButton.Anchor = "Bottom, Left"
+    $exportButton.Add_Click({ Export-Shortcuts })
+
+    $importGitHubButton = New-Object System.Windows.Forms.Button
+    $importGitHubButton.Text = "Import from GitHub"
+    $importGitHubButton.Width = 120
+    $importGitHubButton.Location = New-Object System.Drawing.Point(280, 5)
+    $importGitHubButton.Anchor = "Bottom, Left"
+    $importGitHubButton.Add_Click({ Import-ShortcutsFromGitHub })
+
+    $buttonPanel.Controls.Add($importGitHubButton)
+    $buttonPanel.Controls.Add($importButton)
+    $buttonPanel.Controls.Add($exportButton)
+    $buttonPanel.Controls.Add($saveButton)
+    $mainPanel.Controls.Add($gridPanel)
+    $mainPanel.Controls.Add($buttonPanel)
+
+    $form.Controls.Add($mainPanel)
+    $exePath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+    $form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exePath)
+    $form.ShowDialog() | Out-Null
+}
+
 
 function GetActiveWindowHandle {
     $hWnd = [WindowHelper]::GetForegroundWindow()
@@ -169,7 +461,6 @@ function ConnectToPowerpoint {
 
 $ppt = ConnectToPowerpoint
 
-Write-Host ""
 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Listening for shortcuts, and hiding this window to the systray in three seconds" -NoNewline
 for ($i = 1; $i -le 3; $i++) {
     Start-Sleep -Seconds 1
@@ -192,6 +483,7 @@ $trayIcon.Add_MouseClick({
     
     if ($windowState -eq 0) {
         [WindowHelper]::ShowWindow($global:hWnd, 9)
+        [WindowHelper]::SetForegroundWindow($global:hWnd)
     } else {
         [WindowHelper]::ShowWindow($global:hWnd, 0)
     }
@@ -227,21 +519,21 @@ while ($true) {
 
     if ($ppt.SlideShowWindows.Count -gt 0) {
         if (-not $inPresentationMode) {
-            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Presentation Mode detected. Shortcuts are temporarily disabled."
-            $inPresentationMode = $true  # Mark that we're in presentation mode
+            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Presentation mode detected. Shortcuts are temporarily disabled."
+            $inPresentationMode = $true  
         }
         Start-Sleep -Milliseconds 1000
         continue
     } else {
         if ($inPresentationMode) {
-            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exited Presentation Mode. Shortcuts are active again."
-            $inPresentationMode = $false  # Reset flag when exiting presentation mode
+            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exited presentation mode. Shortcuts are active again."
+            $inPresentationMode = $false  
         }
     }
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 
-    foreach ($virtualKeyCombo in $shortcuts.Keys) {
+    foreach ($virtualKeyCombo in $($shortcuts.Keys | Sort-Object { $_.Split(' ').Count } -Descending)) {
         $pressed = $true
 
         foreach ($virtualKey in $virtualKeyCombo -split ' ') {  
@@ -256,22 +548,23 @@ while ($true) {
         if ($pressed) { 
             if ($shortcuts.ContainsKey($virtualKeyCombo)) {
                 $macroName = $shortcuts[$virtualKeyCombo]
+                        if ($macroName -eq "InstrumentaKeysEditor") {
+            Start-ShortcutEditor
+            continue
+        }
                 Write-Host "$timestamp - Detected shortcut $($friendlyShortcuts[$virtualKeyCombo]), executing macro $macroName"
                 try {
                     $ppt.Run($macroName)
                 } catch {
-                    Write-Host "$timestamp - Error: Failed execution of $macroName with message $_ "
+                    Write-Host "$timestamp - ERROR: Failed execution of $macroName with message $_ "
                 }
 
                 Start-Sleep -Milliseconds 300
             } else {
-                Write-Host "$timestamp - Error: Macro not found for shortcut $($friendlyShortcuts[$virtualKeyCombo])."
+                Write-Host "$timestamp - ERROR: Macro not found for shortcut $($friendlyShortcuts[$virtualKeyCombo])."
             }
         }
     }
 
     Start-Sleep -Milliseconds 100
 }
-
-Write-Output "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Execution complete. Press Enter to exit..."
-Read-Host
