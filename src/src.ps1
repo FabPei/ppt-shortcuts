@@ -48,7 +48,7 @@ public class WindowHelper {
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
 $global:keyMap = @{} 
 
-$instrumentaKeysVersion = "0.17"
+$instrumentaKeysVersion = "0.18"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -375,7 +375,6 @@ function Start-ShortcutEditor {
         }
     }
 
-
     $gridPanel.Controls.Add($grid)
     $buttonPanel = New-Object System.Windows.Forms.Panel
     $buttonPanel.Dock = "Bottom"
@@ -441,51 +440,6 @@ function Start-ShortcutEditor {
     $form.ShowDialog() | Out-Null
 }
 
-
-function GetActiveWindowHandle {
-    $hWnd = [WindowHelper]::GetForegroundWindow()
-
-    if ($hWnd -eq [IntPtr]::Zero) {
-        return $null
-    }
-
-    return $hWnd
-}
-
-function IsPowerPointActive {
-    $activeWindow = GetActiveWindowHandle
-    if ($null -eq $activeWindow) { 
-        return $false 
-    }
-
-    $activeProcessId = 0  
-    [WindowHelper]::GetWindowThreadProcessId($activeWindow, [ref]$activeProcessId)
-
-    $activeProcess = Get-Process -Id $activeProcessId -ErrorAction SilentlyContinue
-    if ($activeProcess) {
-        $exeName = $activeProcess.ProcessName
-        $isActive = ($exeName -eq "POWERPNT")
-
-        if ($isActive -eq "True") {
-	return "active"
-	} else {
-	return "not-active"
-	}
-    } else {
-        return "not-active"
-    }
-}
-
-function ConnectToPowerpoint {
-    try {
-        return [System.Runtime.Interopservices.Marshal]::GetActiveObject("PowerPoint.Application")
-    } catch {
-        return $null
-    }
-}
-
-$ppt = ConnectToPowerpoint
-
 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Listening for shortcuts, and hiding this window to the systray in three seconds" -NoNewline
 for ($i = 1; $i -le 3; $i++) {
     Start-Sleep -Seconds 1
@@ -500,10 +454,30 @@ Add-Type -AssemblyName System.Windows.Forms
 $trayIcon = New-Object System.Windows.Forms.NotifyIcon
 $exePath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
 $trayIcon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exePath)
-$trayIcon.Text = "Instrumenta Keys is running (click to view/hide)"
+$trayIcon.Text = "Instrumenta Keys is running"
 $trayIcon.Visible = $true
 
-$trayIcon.Add_MouseClick({
+$contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+
+$exitItem = $contextMenu.Items.Add("Exit")
+$exitItem.Add_Click({
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exiting application..."
+   
+    $logTimer.Stop()
+
+    $trayIcon.Dispose()
+    
+    [System.Windows.Forms.Application]::Exit()
+    Stop-Process -Id $PID -Force 
+})
+
+$editorItem = $contextMenu.Items.Add("Shortcut Editor")
+$editorItem.Add_Click({
+    Start-ShortcutEditor 
+})
+
+$toggleWindowItem = $contextMenu.Items.Add("Show/Hide Window")
+$toggleWindowItem.Add_Click({
     $windowState = [WindowHelper]::ShowWindow($global:hWnd, 0)
     
     if ($windowState -eq 0) {
@@ -514,90 +488,195 @@ $trayIcon.Add_MouseClick({
     }
 })
 
-$waiting = $true
-$inPresentationMode = $false
+$showShortcutsItem = $contextMenu.Items.Add("Available shortcuts")
+$showShortcutsItem.Add_Click({
+    $shortcutText = "Shortcuts and actions:`n`n"
 
-Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Waiting for PowerPoint instance."
+    foreach ($shortcut in $shortcuts.Keys) {
+        $friendlyName = $friendlyShortcuts[$shortcut]
+        $macroName = $shortcuts[$shortcut]
+        $shortcutText += "$friendlyName → $macroName`n"
+    }
+
+    [System.Windows.Forms.MessageBox]::Show($shortcutText, "Shortcut list", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+})
+
+$trayIcon.ContextMenuStrip = $contextMenu
 
 $keyTimestamps = @{}
 $comboTimeThreshold = 200
+$global:ShortcutLog = New-Object System.Collections.ArrayList
 
-while ($true) {
-    $ppt = ConnectToPowerpoint
+$global:TriggerShortcutEditor = New-Object PSCustomObject -Property @{ Value = $false }
 
-    if ($null -eq $ppt) {
-        if (-not $waiting) { 
-            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Waiting for PowerPoint instance."
-            $waiting = $true
+$logTimer = New-Object System.Windows.Forms.Timer
+$logTimer.Interval = 1000  
+$logTimer.Add_Tick({  
+    if ($global:TriggerShortcutEditor.Value) {
+        $global:TriggerShortcutEditor.Value = $false 
+        Start-ShortcutEditor
+        $global:ShortcutLog.Clear() 
+    } 
+    if ($global:ShortcutLog.Count -gt 0) {  
+        foreach ($message in $global:ShortcutLog) {
+            Write-Host "$message"  
         }
-        Start-Sleep -Milliseconds 5000 
-        continue
+        $global:ShortcutLog.Clear()  
     }
+})
+$logTimer.Start()
 
-    if ($waiting) { 
-        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - PowerPoint instance found. Accepting shortcuts when PowerPoint window is active."
-        $waiting = $false
-    }
 
-    $testIfActive = IsPowerPointActive
-    if ($testIfActive -eq "not-active") { 
-        Start-Sleep -Milliseconds 1000
-        continue
-    }
+function Start-ShortcutDetection {
+    param($globalKeyMap, $shortcuts, $friendlyShortcuts)
 
-    if ($ppt.SlideShowWindows.Count -gt 0) {
-        if (-not $inPresentationMode) {
-            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Presentation mode detected. Shortcuts are temporarily disabled."
-            $inPresentationMode = $true  
+    $Runspace = [runspacefactory]::CreateRunspace()
+    $Runspace.Open()
+    $PowerShell = [powershell]::Create().AddScript({
+        param($globalKeyMap, $shortcuts, $friendlyShortcuts, $keyTimestamps, $comboTimeThreshold, $ShortcutLog, $TriggerShortcutEditor)
+
+        Add-Type -TypeDefinition @"
+        using System;
+        using System.Runtime.InteropServices;
+        using System.Text;
+
+        public class KeyboardListener {
+            [DllImport("user32.dll")]
+            public static extern short GetAsyncKeyState(int vKey);
         }
-        Start-Sleep -Milliseconds 1000
-        continue
-    } else {
-        if ($inPresentationMode) {
-            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exited presentation mode. Shortcuts are active again."
-            $inPresentationMode = $false  
+
+        public class WindowHelper {
+            [DllImport("user32.dll")]
+            public static extern IntPtr GetForegroundWindow();
+
+            [DllImport("user32.dll")]
+            public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
         }
-    }
+"@ -Language CSharp
 
-    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    $currentTime = [Environment]::TickCount
-
-    $pressedKeys = @()
-    foreach ($key in $($global:keyMap.Keys)) {  
-        $keyInt = [int]$global:keyMap[$key]  
-        $state = [KeyboardListener]::GetAsyncKeyState($keyInt)
-
-        if ($state -ne 0) {
-            $pressedKeys += "$keyInt"
-            if (-not $keyTimestamps.ContainsKey($keyInt) -or ($currentTime - $keyTimestamps[$keyInt] -gt $comboTimeThreshold)) {
-                $keyTimestamps[$keyInt] = $currentTime
+        function ConnectToPowerpoint {
+            try {
+                return [System.Runtime.Interopservices.Marshal]::GetActiveObject("PowerPoint.Application")
+            } catch {
+                return $null
             }
         }
-    }
 
-    foreach ($virtualKeyCombo in $($shortcuts.Keys)) {
-        $keys = $virtualKeyCombo -split ' '
-        $allPressed = -not (Compare-Object -ReferenceObject $pressedKeys -DifferenceObject $keys)
+        function IsPowerPointActive {
+            $hWnd = [WindowHelper]::GetForegroundWindow()
+            if ($null -eq $hWnd -or $hWnd -eq [IntPtr]::Zero) { 
+                return "not-active"
+            }
 
+            $activeProcessId = 0  
+            [WindowHelper]::GetWindowThreadProcessId($hWnd, [ref]$activeProcessId)
+            $activeProcess = Get-Process -Id $activeProcessId -ErrorAction SilentlyContinue
 
-        if ($allPressed) {
-            $macroName = $shortcuts[$virtualKeyCombo]
-            if ($macroName -eq "InstrumentaKeysEditor") {
-                Start-ShortcutEditor
+            if ($activeProcess.ProcessName -eq "POWERPNT") {
+                return "active"
+            }
+            return "not-active"
+        }
+
+        $waiting = $true
+        $inPresentationMode = $false      
+
+        while ($true) {
+            $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+
+            $ppt = ConnectToPowerpoint
+            if ($null -eq $ppt) {
+                if (-not $waiting) { 
+                    $ShortcutLog.Add("$timestamp - Waiting for PowerPoint instance.") | Out-Null
+                    $waiting = $true
+                }
+                Start-Sleep -Milliseconds 5000 
                 continue
             }
 
-            Write-Host "$timestamp - Detected shortcut $($friendlyShortcuts[$virtualKeyCombo]), executing macro $macroName"
-            try {
-                $ppt.Run($macroName)
-            } catch {
-                Write-Host "$timestamp - ERROR: Failed execution of $macroName with message $_"
+            if ($waiting) { 
+                $ShortcutLog.Add("$timestamp - PowerPoint instance found. Accepting shortcuts when PowerPoint window is active.") | Out-Null
+                $waiting = $false
             }
 
-            Start-Sleep -Milliseconds 300
-            break
-        }
-    }
+            $testIfActive = IsPowerPointActive
+            if ($testIfActive -eq "not-active") { 
+                Start-Sleep -Milliseconds 1000
+                continue
+            }
 
-    Start-Sleep -Milliseconds 100
+            if ($ppt.SlideShowWindows.Count -gt 0) {
+                if (-not $inPresentationMode) {
+                    $ShortcutLog.Add("$timestamp - Presentation mode detected. Shortcuts are temporarily disabled.") | Out-Null
+                    $inPresentationMode = $true  
+                }
+                Start-Sleep -Milliseconds 1000
+                continue
+            } else {
+                if ($inPresentationMode) {
+                    $ShortcutLog.Add("$timestamp - Exited presentation mode. Shortcuts are active again.") | Out-Null
+                    $inPresentationMode = $false  
+                }
+            }
+
+            $pressedKeys = @()
+            foreach ($key in $globalKeyMap.Keys) {  
+                $keyInt = [int]$globalKeyMap[$key]  
+                $state = [KeyboardListener]::GetAsyncKeyState($keyInt)
+
+                if ($state -ne 0) {
+                    $pressedKeys += "$keyInt"
+                    if (-not $keyTimestamps.ContainsKey($keyInt) -or ($currentTime - $keyTimestamps[$keyInt] -gt $comboTimeThreshold)) {
+                        $keyTimestamps[$keyInt] = $currentTime
+                    }
+                }
+            }
+
+            foreach ($virtualKeyCombo in $shortcuts.Keys) {
+
+                $keys = $virtualKeyCombo -split ' '
+                $allPressed = -not (Compare-Object -ReferenceObject $pressedKeys -DifferenceObject $keys)
+
+                if ($allPressed) {
+                    $macroName = $shortcuts[$virtualKeyCombo]
+                    
+                    if ($macroName -eq "InstrumentaKeysEditor") {
+                        if (-not $global:TriggerShortcutEditor.Value) {  
+                            $global:TriggerShortcutEditor.Value = $true
+                        }
+
+                    } else { 
+                    $ShortcutLog.Add("$timestamp - Detected shortcut $($friendlyShortcuts[$virtualKeyCombo]), executing macro $macroName") | Out-Null
+                    try {
+                        $ppt.Run($macroName)
+                    } catch {
+                        $ShortcutLog.Add("$timestamp - ERROR: Failed execution of $macroName with message $_") | Out-Null
+                    }
+
+                    }
+
+                    Start-Sleep -Milliseconds 300
+                    break
+                }
+            }
+
+            Start-Sleep -Milliseconds 100
+        }
+    })
+
+    $PowerShell.AddArgument($globalKeyMap)
+    $PowerShell.AddArgument($shortcuts)
+    $PowerShell.AddArgument($friendlyShortcuts)
+    $PowerShell.AddArgument($keyTimestamps)
+    $PowerShell.AddArgument($comboTimeThreshold)
+    $PowerShell.AddArgument($global:ShortcutLog)
+    $PowerShell.AddArgument($global:TriggerShortcutEditor)
+    
+
+    $PowerShell.Runspace = $Runspace
+    return $PowerShell.BeginInvoke()
 }
+
+$ShortcutDetectionHandle = Start-ShortcutDetection -globalKeyMap $global:keyMap -shortcuts $shortcuts -friendlyShortcuts $friendlyShortcuts
+
+[System.Windows.Forms.Application]::Run()
