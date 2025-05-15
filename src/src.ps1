@@ -46,66 +46,9 @@ public class WindowHelper {
 "@ -Language CSharp
 
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
+$global:keyMap = @{} 
 
-$keyMap = @{
-    "Ctrl"       = 0x11
-    "Shift"      = 0x10
-    "Alt"        = 0x12
-    "Del"        = 0x2E
-    "Up"         = 0x26
-    "Down"       = 0x28
-    "Left"       = 0x25
-    "Right"      = 0x27
-    "Esc"        = 0x1B
-    "Enter"      = 0x0D
-    "Tab"        = 0x09
-    "Space"      = 0x20
-    "Backspace"  = 0x08
-    "PageUp"     = 0x21
-    "PageDown"   = 0x22
-    "Home"       = 0x24
-    "End"        = 0x23
-    "Insert"     = 0x2D
-    "F1"         = 0x70
-    "F2"         = 0x71
-    "F3"         = 0x72
-    "F4"         = 0x73
-    "F5"         = 0x74
-    "F6"         = 0x75
-    "F7"         = 0x76
-    "F8"         = 0x77
-    "F9"         = 0x78
-    "F10"        = 0x79
-    "F11"        = 0x7A
-    "F12"        = 0x7B 
-    "Num0"       = 0x60
-    "Num1"       = 0x61
-    "Num2"       = 0x62
-    "Num3"       = 0x63
-    "Num4"       = 0x64
-    "Num5"       = 0x65
-    "Num6"       = 0x66
-    "Num7"       = 0x67
-    "Num8"       = 0x68
-    "Num9"       = 0x69
-    "NumLock"    = 0x90
-    "NumpadDivide" = 0x6F
-    "NumpadMultiply" = 0x6A
-    "NumpadSubtract" = 0x6D
-    "NumpadAdd"  = 0x6B
-    "NumpadEnter" = 0x0D 
-    "CapsLock"   = 0x14
-    "ScrollLock" = 0x91
-    "PrintScreen" = 0x2C
-    "PauseBreak" = 0x13
-}
-
-for ($i = 32; $i -le 96; $i++) {
-    $keyMap[[char]$i] = $i 
-}
-
-
-$instrumentaKeysVersion = "0.14"
+$instrumentaKeysVersion = "0.16"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -152,30 +95,90 @@ if (-Not (Test-Path $csvPath)) {
 }
 
 function Reload-ShortcutSettings {
-
     $newShortcutList = New-Object System.Collections.ArrayList
 
     $shortcuts.Clear()
     $friendlyShortcuts.Clear()
 
+    $global:keyMap = @{}
+
     if (Test-Path $csvPath) {
         $csvData = Import-Csv -Path $csvPath -Header "Key", "Macro"
 
-        foreach ($entry in $($csvData)) {
-
+        foreach ($entry in $csvData) {
             if ($entry.Key -and $entry.Macro) {
                 $keyCombo = $entry.Key -split '\+'
                 $virtualKeys = @()
 
                 foreach ($key in $keyCombo) {
-                    if ($keyMap.ContainsKey($key)) {
-                        $virtualKeys += $keyMap[$key]
-                    } else {
+                    if (-not $global:keyMap.ContainsKey($key)) {
                         try {
-                            $virtualKeys += [int][char]$key
+                            switch ($key) {
+                                "Ctrl"           { $global:keyMap[$key] = 0x11 }
+                                "Shift"          { $global:keyMap[$key] = 0x10 }
+                                "Alt"            { $global:keyMap[$key] = 0x12 }
+                                "Del"            { $global:keyMap[$key] = 0x2E }
+                                "Up"             { $global:keyMap[$key] = 0x26 }
+                                "Down"           { $global:keyMap[$key] = 0x28 }
+                                "Left"           { $global:keyMap[$key] = 0x25 }
+                                "Right"          { $global:keyMap[$key] = 0x27 }
+                                "Esc"            { $global:keyMap[$key] = 0x1B }
+                                "Enter"          { $global:keyMap[$key] = 0x0D }
+                                "Tab"            { $global:keyMap[$key] = 0x09 }
+                                "Space"          { $global:keyMap[$key] = 0x20 }
+                                "Backspace"      { $global:keyMap[$key] = 0x08 }
+                                "PageUp"         { $global:keyMap[$key] = 0x21 }
+                                "PageDown"       { $global:keyMap[$key] = 0x22 }
+                                "Home"           { $global:keyMap[$key] = 0x24 }
+                                "End"            { $global:keyMap[$key] = 0x23 }
+                                "Insert"         { $global:keyMap[$key] = 0x2D }
+                                "F1"             { $global:keyMap[$key] = 0x70 }
+                                "F2"             { $global:keyMap[$key] = 0x71 }
+                                "F3"             { $global:keyMap[$key] = 0x72 }
+                                "F4"             { $global:keyMap[$key] = 0x73 }
+                                "F5"             { $global:keyMap[$key] = 0x74 }
+                                "F6"             { $global:keyMap[$key] = 0x75 }
+                                "F7"             { $global:keyMap[$key] = 0x76 }
+                                "F8"             { $global:keyMap[$key] = 0x77 }
+                                "F9"             { $global:keyMap[$key] = 0x78 }
+                                "F10"            { $global:keyMap[$key] = 0x79 }
+                                "F11"            { $global:keyMap[$key] = 0x7A }
+                                "F12"            { $global:keyMap[$key] = 0x7B }
+                                "Num0"           { $global:keyMap[$key] = 0x60 }
+                                "Num1"           { $global:keyMap[$key] = 0x61 }
+                                "Num2"           { $global:keyMap[$key] = 0x62 }
+                                "Num3"           { $global:keyMap[$key] = 0x63 }
+                                "Num4"           { $global:keyMap[$key] = 0x64 }
+                                "Num5"           { $global:keyMap[$key] = 0x65 }
+                                "Num6"           { $global:keyMap[$key] = 0x66 }
+                                "Num7"           { $global:keyMap[$key] = 0x67 }
+                                "Num8"           { $global:keyMap[$key] = 0x68 }
+                                "Num9"           { $global:keyMap[$key] = 0x69 }
+                                "NumLock"        { $global:keyMap[$key] = 0x90 }
+                                "NumpadDivide"   { $global:keyMap[$key] = 0x6F }
+                                "NumpadMultiply" { $global:keyMap[$key] = 0x6A }
+                                "NumpadSubtract" { $global:keyMap[$key] = 0x6D }
+                                "NumpadAdd"      { $global:keyMap[$key] = 0x6B }
+                                "NumpadEnter"    { $global:keyMap[$key] = 0x0D }
+                                "CapsLock"       { $global:keyMap[$key] = 0x14 }
+                                "ScrollLock"     { $global:keyMap[$key] = 0x91 }
+                                "PrintScreen"    { $global:keyMap[$key] = 0x2C }
+                                "PauseBreak"     { $global:keyMap[$key] = 0x13 }
+                                Default      {
+                                    if ([int][char]$key -ge 32 -and [int][char]$key -le 96) {
+                                        $global:keyMap[$key] = [int][char]$key
+                                    } else {
+                                        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Ignoring unsupported key '$key'."
+                                    }
+                                }
+                            }
                         } catch {
-                            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to process key '$key' in shortcut '$keyCombo'."
+                            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to process key '$key' in shortcut '$entry.Key'."
                         }
+                    }
+
+                    if ($global:keyMap.ContainsKey($key)) {
+                        $virtualKeys += $global:keyMap[$key]
                     }
                 }
 
@@ -202,10 +205,8 @@ function Reload-ShortcutSettings {
     $global:shortcutList = $newShortcutList
 
     Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Shortcut settings loaded"
-    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Available shortcuts:$($newShortcutList.count)"
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Available shortcuts: $($newShortcutList.count)"
     $newShortcutList | Format-Table -AutoSize | Out-Host
-
-   
 }
 
 Reload-ShortcutSettings
@@ -560,41 +561,25 @@ while ($true) {
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     $currentTime = [Environment]::TickCount
 
-    foreach ($key in $keyMap.Keys) {  
-        $keyInt = [int]$keyMap[$key]  
+    $pressedKeys = @()
+    foreach ($key in $($global:keyMap.Keys)) {  
+        $keyInt = [int]$global:keyMap[$key]  
         $state = [KeyboardListener]::GetAsyncKeyState($keyInt)
 
         if ($state -ne 0) {
+            $pressedKeys += "$keyInt"
             if (-not $keyTimestamps.ContainsKey($keyInt) -or ($currentTime - $keyTimestamps[$keyInt] -gt $comboTimeThreshold)) {
                 $keyTimestamps[$keyInt] = $currentTime
             }
         }
     }
 
-    foreach ($virtualKeyCombo in $($shortcuts.Keys | Sort-Object { $_.Split(' ').Count } -Descending)) {
+    foreach ($virtualKeyCombo in $($shortcuts.Keys)) {
         $keys = $virtualKeyCombo -split ' '
-        $allPressed = $true
-        $latest = 0
-        $earliest = [int]::MaxValue
+        $allPressed = -not (Compare-Object -ReferenceObject $pressedKeys -DifferenceObject $keys)
 
-        foreach ($key in $keys) {
-            $keyInt = [int]$key
-            if ([KeyboardListener]::GetAsyncKeyState($keyInt) -eq 0) {
-                $allPressed = $false
-                break
-            }
 
-            if ($keyTimestamps.ContainsKey($keyInt)) {
-                $ts = $keyTimestamps[$keyInt]
-                if ($ts -lt $earliest) { $earliest = $ts }
-                if ($ts -gt $latest) { $latest = $ts }
-            } else {
-                $allPressed = $false
-                break
-            }
-        }
-
-        if ($allPressed -and ($latest - $earliest -le $comboTimeThreshold)) {
+        if ($allPressed) {
             $macroName = $shortcuts[$virtualKeyCombo]
             if ($macroName -eq "InstrumentaKeysEditor") {
                 Start-ShortcutEditor
