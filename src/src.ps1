@@ -48,7 +48,7 @@ public class WindowHelper {
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
 $global:keyMap = @{} 
 
-$instrumentaKeysVersion = "0.16"
+$instrumentaKeysVersion = "0.17"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -132,6 +132,7 @@ function Reload-ShortcutSettings {
                                 "Home"           { $global:keyMap[$key] = 0x24 }
                                 "End"            { $global:keyMap[$key] = 0x23 }
                                 "Insert"         { $global:keyMap[$key] = 0x2D }
+                                "Plus"           { $global:keyMap[$key] = 0x2B }
                                 "F1"             { $global:keyMap[$key] = 0x70 }
                                 "F2"             { $global:keyMap[$key] = 0x71 }
                                 "F3"             { $global:keyMap[$key] = 0x72 }
