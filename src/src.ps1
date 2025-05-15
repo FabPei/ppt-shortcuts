@@ -77,8 +77,33 @@ $keyMap = @{
     "F9"         = 0x78
     "F10"        = 0x79
     "F11"        = 0x7A
-    "F12"        = 0x7B  
+    "F12"        = 0x7B 
+    "Num0"       = 0x60
+    "Num1"       = 0x61
+    "Num2"       = 0x62
+    "Num3"       = 0x63
+    "Num4"       = 0x64
+    "Num5"       = 0x65
+    "Num6"       = 0x66
+    "Num7"       = 0x67
+    "Num8"       = 0x68
+    "Num9"       = 0x69
+    "NumLock"    = 0x90
+    "NumpadDivide" = 0x6F
+    "NumpadMultiply" = 0x6A
+    "NumpadSubtract" = 0x6D
+    "NumpadAdd"  = 0x6B
+    "NumpadEnter" = 0x0D 
+    "CapsLock"   = 0x14
+    "ScrollLock" = 0x91
+    "PrintScreen" = 0x2C
+    "PauseBreak" = 0x13
 }
+
+for ($i = 32; $i -le 96; $i++) {
+    $keyMap[[char]$i] = $i 
+}
+
 
 $instrumentaKeysVersion = "0.14"
 
@@ -100,9 +125,6 @@ $shortcuts = @{}
 $friendlyShortcuts = @{}
 $global:shortcutList = New-Object System.Collections.ArrayList
 $csvPath = "shortcuts.csv"
-
-$keyTimestamps = @{}
-$comboTimeThreshold = 100
 
 if (-Not (Test-Path $csvPath)) {
     Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Shortcuts file missing. Creating default configuration..."
@@ -495,6 +517,9 @@ $inPresentationMode = $false
 
 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Waiting for PowerPoint instance."
 
+$keyTimestamps = @{}
+$comboTimeThreshold = 200
+
 while ($true) {
     $ppt = ConnectToPowerpoint
 
@@ -535,11 +560,13 @@ while ($true) {
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     $currentTime = [Environment]::TickCount
 
-    foreach ($key in $keyMap.Values) {
-        $state = [KeyboardListener]::GetAsyncKeyState($key)
+    foreach ($key in $keyMap.Keys) {  
+        $keyInt = [int]$keyMap[$key]  
+        $state = [KeyboardListener]::GetAsyncKeyState($keyInt)
+
         if ($state -ne 0) {
-            if (-not $keyTimestamps.ContainsKey($key) -or ($currentTime - $keyTimestamps[$key] -gt $comboTimeThreshold)) {
-                $keyTimestamps[$key] = $currentTime
+            if (-not $keyTimestamps.ContainsKey($keyInt) -or ($currentTime - $keyTimestamps[$keyInt] -gt $comboTimeThreshold)) {
+                $keyTimestamps[$keyInt] = $currentTime
             }
         }
     }
