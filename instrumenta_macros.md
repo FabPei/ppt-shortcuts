@@ -5,37 +5,60 @@ This document provides a list of **macro references** of Instrumenta that can be
 ## Supported Shortcut Keys
 The keyboard shortcuts allow for a combination of the following keys:
 
-### **Modifier Keys**
-- `Ctrl`
-- `Shift`
-- `Alt`
+### Modifier Keys
+- Ctrl
+- Shift
+- Alt
 
-### **Letter Keys**
-- `A` to `Z`
+### Function Keys
+- F1 to F12
 
-### **Function Keys**
-- `F1` to `F12`
+### Navigation Keys
+- Up (Arrow Up)
+- Down (Arrow Down)
+- Left (Arrow Left)
+- Right (Arrow Right)
+- Home
+- End
+- PageUp
+- PageDown
 
-### **Special Keys**
-- `Space`
-- `Tab`
-- `Backspace`
-- `Insert`
-- `Del` (Delete)
-- `Enter`
-- `Esc`
+### Special Keys
+- Esc
+- Enter
+- Tab
+- Space
+- Backspace
+- Insert
+- Del (Delete)
+- Plus (`+`)
 
-### **Navigation Keys**
-- `Up` (Arrow Up)
-- `Down` (Arrow Down)
-- `Left` (Arrow Left)
-- `Right` (Arrow Right)
+### Numeric Keys (Numpad)
+- Num0 to Num9
+- NumLock
+- NumpadDivide (`/`)
+- NumpadMultiply (`*`)
+- NumpadSubtract (`-`)
+- NumpadAdd (`+`)
+- NumpadEnter
 
-### **Additional Keys**
-- `Home`
-- `End`
-- `PageUp`
-- `PageDown`
+### Lock & System Keys
+- CapsLock
+- ScrollLock
+- PrintScreen
+- PauseBreak
+
+### Standard ASCII Keys
+
+|      |      |      |      |      |      |      |      |      |      |
+|------|------|------|------|------|------|------|------|------|------|
+| `!`  | `"`  | `#`  | `$`  | `%`  | `&`  | `'`  | `(`  | `)`  | `*`  |
+| `+`  | `,`  | `-`  | `.`  | `/`  | `0`  | `1`  | `2`  | `3`  | `4`  |
+| `5`  | `6`  | `7`  | `8`  | `9`  | `:`  | `;`  | `<`  | `=`  | `>`  |
+| `?`  | `@`  | `A`  | `B`  | `C`  | `D`  | `E`  | `F`  | `G`  | `H`  |
+| `I`  | `J`  | `K`  | `L`  | `M`  | `N`  | `O`  | `P`  | `Q`  | `R`  |
+| `S`  | `T`  | `U`  | `V`  | `W`  | `X`  | `Y`  | `Z`  | `[`  | `\`  |
+| `]`  | `^`  | `_`  | `` ` `` |
 
 ---
 
