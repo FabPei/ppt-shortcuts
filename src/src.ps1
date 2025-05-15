@@ -101,6 +101,9 @@ $friendlyShortcuts = @{}
 $global:shortcutList = New-Object System.Collections.ArrayList
 $csvPath = "shortcuts.csv"
 
+$keyTimestamps = @{}
+$comboTimeThreshold = 100
+
 if (-Not (Test-Path $csvPath)) {
     Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Shortcuts file missing. Creating default configuration..."
     
@@ -530,37 +533,56 @@ while ($true) {
     }
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $currentTime = [Environment]::TickCount
+
+    foreach ($key in $keyMap.Values) {
+        $state = [KeyboardListener]::GetAsyncKeyState($key)
+        if ($state -ne 0) {
+            if (-not $keyTimestamps.ContainsKey($key) -or ($currentTime - $keyTimestamps[$key] -gt $comboTimeThreshold)) {
+                $keyTimestamps[$key] = $currentTime
+            }
+        }
+    }
 
     foreach ($virtualKeyCombo in $($shortcuts.Keys | Sort-Object { $_.Split(' ').Count } -Descending)) {
-        $pressed = $true
+        $keys = $virtualKeyCombo -split ' '
+        $allPressed = $true
+        $latest = 0
+        $earliest = [int]::MaxValue
 
-        foreach ($virtualKey in $virtualKeyCombo -split ' ') {  
-            $keyInt = [int]$virtualKey  
-
+        foreach ($key in $keys) {
+            $keyInt = [int]$key
             if ([KeyboardListener]::GetAsyncKeyState($keyInt) -eq 0) {
-                $pressed = $false
+                $allPressed = $false
+                break
+            }
+
+            if ($keyTimestamps.ContainsKey($keyInt)) {
+                $ts = $keyTimestamps[$keyInt]
+                if ($ts -lt $earliest) { $earliest = $ts }
+                if ($ts -gt $latest) { $latest = $ts }
+            } else {
+                $allPressed = $false
                 break
             }
         }
 
-        if ($pressed) { 
-            if ($shortcuts.ContainsKey($virtualKeyCombo)) {
-                $macroName = $shortcuts[$virtualKeyCombo]
-                        if ($macroName -eq "InstrumentaKeysEditor") {
-            Start-ShortcutEditor
-            continue
-        }
-                Write-Host "$timestamp - Detected shortcut $($friendlyShortcuts[$virtualKeyCombo]), executing macro $macroName"
-                try {
-                    $ppt.Run($macroName)
-                } catch {
-                    Write-Host "$timestamp - ERROR: Failed execution of $macroName with message $_ "
-                }
-
-                Start-Sleep -Milliseconds 300
-            } else {
-                Write-Host "$timestamp - ERROR: Macro not found for shortcut $($friendlyShortcuts[$virtualKeyCombo])."
+        if ($allPressed -and ($latest - $earliest -le $comboTimeThreshold)) {
+            $macroName = $shortcuts[$virtualKeyCombo]
+            if ($macroName -eq "InstrumentaKeysEditor") {
+                Start-ShortcutEditor
+                continue
             }
+
+            Write-Host "$timestamp - Detected shortcut $($friendlyShortcuts[$virtualKeyCombo]), executing macro $macroName"
+            try {
+                $ppt.Run($macroName)
+            } catch {
+                Write-Host "$timestamp - ERROR: Failed execution of $macroName with message $_"
+            }
+
+            Start-Sleep -Milliseconds 300
+            break
         }
     }
 
