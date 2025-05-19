@@ -62,7 +62,7 @@ To install the add-in, follow these steps:
 
 1. **Download the required files**:
    - [InstrumentaKeysHelper.ppam](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/mac/InstrumentaKeysHelper.ppam) (PowerPoint add-in)
-   - [InstrumentaKeys.applescript](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/mac/InstrumentaKeys.applescript) (AppleScript helper)
+   - [InstrumentaKeys.applescript](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/mac/InstrumentaKeys.applescript) (AppleScript script)
 
 2. **Move both files** to: **~/Library/Application Scripts/com.microsoft.Powerpoint/**
 - This folder is located in the **Library directory of the current user**. If it does not exist, create it manually.
