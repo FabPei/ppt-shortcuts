@@ -1,5 +1,5 @@
 # Instrumenta Keys
-Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://github.com/iappyx/Instrumenta/), bringing **customizable keyboard shortcuts** to Instrumenta. Since **VBA for PowerPoint lacks native keyboard shortcut support**, Instrumenta Keys -written in **Microsoft PowerShell**- runs independently alongside Instrumenta, enabling users to **assign shortcuts via a simple CSV file**.
+Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://github.com/iappyx/Instrumenta/), bringing **customizable keyboard shortcuts** to Instrumenta. Since **VBA for PowerPoint lacks native keyboard shortcut support**, Instrumenta Keys runs independently alongside Instrumenta, enabling users to **assign shortcuts via a simple CSV file**.
 
 [@iappyx](https://github.com/iappyx)
 
