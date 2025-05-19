@@ -129,6 +129,9 @@ This command requires a **Macro Reference** as a command-line argument. Instrume
 The full list of available macro references can be found [here](https://github.com/iappyx/Instrumenta-Keys/blob/main/instrumenta-macro-list.md). 
 Updating the JSON file with your desired shortcuts will allow you to tailor Instrumenta Keys to your workflow.
 
+## Optimizing Shortcut Execution
+Instrumenta Keys works **fastest** when the full PowerPoint **Ribbon** is visible on the screen, especially the **"[Keys]"** tab. If the **"[Keys]"** tab is placed inside the **overflow menu** (the button with the `>>`), shortcut execution may be slightly slower. Keeping the tab visible ensures optimal responsiveness when triggering macros via keyboard shortcuts.
+
 ## How to Build from Source
 Building from source is straightforward and allows you to customize Instrumenta Keys to your needs.
 
