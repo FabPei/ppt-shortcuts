@@ -93,7 +93,7 @@ Several commercial applications can potentially execute the AppleScript, includi
 ## Configuring the shortcuts
 
 1. Download the default preset keyboard shortcuts:  
-[InstrumentaDefault.json](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/shared-shortcuts/mac/Karabiner-Elements/InstrumentaDefault.json)
+[InstrumentaDefault.json](https://github.com/iappyx/Instrumenta-Keys/raw/main/shared-shortcuts/mac/Karabiner-Elements/InstrumentaDefault.json)
 2. Open the JSON file in your preferred text editor.
 3. Select all content and copy it to your clipboard.
 4. Open **Karabiner-Elements Settings**, then navigate to **"Complex Modifications"**.
