@@ -23,7 +23,7 @@ An **AppleScript version** is under exploration.
 Instrumenta Keys is a **PowerShell script** and does not require administrative rights for installation on most enterprise systems.
 
 ### Windows Installation
-1. **Download the binary:** [Instrumenta Keys.exe](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/Instrumenta%20Keys.exe)
+1. **Download the binary:** [Instrumenta Keys.exe](https://github.com/iappyx/Instrumenta-Keys/raw/main/bin/windows/Instrumenta%20Keys.exe)
 2. Run the binary. It will automatically **generate a shortcut file for you** and **minimize to the system tray** after a few seconds. Enjoy your shortcuts!
 3. To open it again, **click the Instrumenta Keys icon** in the system tray. If you click the icon again it will hide again.
 
@@ -45,7 +45,7 @@ Building your own Instrumenta Keys is very simple:
 ### Steps
 1. Locate the source code in `\src\src.ps1`
 2. Run the build script in an elevated PowerShell window: `.\build.ps1`
-3. The executable will be generated in `\bin\Instrumenta Keys.exe`
+3. The executable will be generated in `\bin\windows\Instrumenta Keys.exe`
 
 # Feature requests and contributions
 I am happy to receive feature requests and code contributions! Let's make the best toolbar together. For feature requests please create new issue and label it as an enhancement (https://github.com/iappyx/Instrumenta/issues/new/choose). 

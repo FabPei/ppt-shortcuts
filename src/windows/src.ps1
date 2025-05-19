@@ -48,7 +48,7 @@ public class WindowHelper {
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
 $global:keyMap = @{} 
 
-$instrumentaKeysVersion = "0.18"
+$instrumentaKeysVersion = "0.19"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -261,7 +261,7 @@ function Import-Shortcuts {
 }
 
 function Import-ShortcutsFromGitHub {
-    $repoUrl = "https://api.github.com/repos/iappyx/Instrumenta-Keys/contents/shared-shortcuts/"
+    $repoUrl = "https://api.github.com/repos/iappyx/Instrumenta-Keys/contents/shared-shortcuts/windows/"
 
     try {
         Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Fetching CSV files from GitHub..."

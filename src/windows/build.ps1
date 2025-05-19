@@ -26,4 +26,4 @@ if (!(Get-Module -ListAvailable ps2exe)) {
     exit
 }
 
-Invoke-PS2EXE -inputFile "src.ps1" -outputFile "..\bin\Instrumenta Keys.exe" -title "Instrumenta Keys" -iconFile Instrumenta.ico
+Invoke-PS2EXE -inputFile "src.ps1" -outputFile "..\..\bin\windows\Instrumenta Keys.exe" -title "Instrumenta Keys" -iconFile Instrumenta.ico
