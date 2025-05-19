@@ -105,7 +105,7 @@ Several commercial applications can potentially execute the AppleScript, includi
 
 ## Customize or add Shortcuts
 To customize or add shortcuts, you'll need to modify the JSON file used by Karabiner-Elements. The relevant section in the JSON where the script is executed follows this format:
-**"/usr/bin/osascript ~/Library/Application\\ Scripts/com.microsoft.Powerpoint/InstrumentaKeys.applescript <Instrumenta Macro Reference>"**
+**"/usr/bin/osascript ~/Library/Application\\ Scripts/com.microsoft.Powerpoint/InstrumentaKeys.applescript <<InstrumentaMacroReference>>"**
 
 This command requires a **Macro Reference** as a command-line argument. Instrumenta provides various built-in macro references that trigger specific functions. **InstrumentaDefault.json** contains the following shortcuts:
 
