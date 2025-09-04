@@ -56,12 +56,12 @@ Write-Host "██║██╔██╗ ██║███████╗   █�
 Write-Host "██║██║╚██╗██║╚════██║   ██║   ██╔══██╗██║   ██║██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   ██╔══██║"
 Write-Host "██║██║ ╚████║███████║   ██║   ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   ██║  ██║"
 Write-Host "╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝"
-Write-Host "██╗  ██╗███████╗██╗   ██╗███████╗                                                            "
-Write-Host "██║ ██╔╝██╔════╝╚██╗ ██╔╝██╔════╝                                                            "
+Write-Host "██╗  ██╗███████╗██╗   ██╗███████╗                                                           "
+Write-Host "██║ ██╔╝██╔════╝╚██╗ ██╔╝██╔════╝                                                           "
 Write-Host "█████╔╝ █████╗   ╚████╔╝ ███████╗      Keyboard Shortcut Companion (v. $instrumentaKeysVersion)"
-Write-Host "██╔═██╗ ██╔══╝    ╚██╔╝  ╚════██║                                                            "
-Write-Host "██║  ██╗███████╗   ██║   ███████║                                                            "
-Write-Host "╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝                                                            "
+Write-Host "██╔═██╗ ██╔══╝    ╚██╔╝  ╚════██║                                                           "
+Write-Host "██║  ██╗███████╗   ██║   ███████║                                                           "
+Write-Host "╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝                                                           "
 Write-Host ""
 
 $shortcuts = @{}
@@ -113,26 +113,26 @@ function Reload-ShortcutSettings {
                 foreach ($key in $keyCombo) {
                     if (-not $global:keyMap.ContainsKey($key)) {
                         try {
-                            switch ($key) {
-                                "Ctrl"           { $global:keyMap[$key] = 0x11 }
-                                "Shift"          { $global:keyMap[$key] = 0x10 }
-                                "Alt"            { $global:keyMap[$key] = 0x12 }
-                                "Del"            { $global:keyMap[$key] = 0x2E }
-                                "Up"             { $global:keyMap[$key] = 0x26 }
-                                "Down"           { $global:keyMap[$key] = 0x28 }
-                                "Left"           { $global:keyMap[$key] = 0x25 }
-                                "Right"          { $global:keyMap[$key] = 0x27 }
-                                "Esc"            { $global:keyMap[$key] = 0x1B }
-                                "Enter"          { $global:keyMap[$key] = 0x0D }
-                                "Tab"            { $global:keyMap[$key] = 0x09 }
-                                "Space"          { $global:keyMap[$key] = 0x20 }
-                                "Backspace"      { $global:keyMap[$key] = 0x08 }
-                                "PageUp"         { $global:keyMap[$key] = 0x21 }
-                                "PageDown"       { $global:keyMap[$key] = 0x22 }
-                                "Home"           { $global:keyMap[$key] = 0x24 }
-                                "End"            { $global:keyMap[$key] = 0x23 }
-                                "Insert"         { $global:keyMap[$key] = 0x2D }
-                                "Plus"           { $global:keyMap[$key] = 0x2B }
+                            switch ($key.ToUpper()) { # Use .ToUpper() for case-insensitivity
+                                "CTRL"           { $global:keyMap[$key] = 0x11 }
+                                "SHIFT"          { $global:keyMap[$key] = 0x10 }
+                                "ALT"            { $global:keyMap[$key] = 0x12 }
+                                "DEL"            { $global:keyMap[$key] = 0x2E }
+                                "UP"             { $global:keyMap[$key] = 0x26 }
+                                "DOWN"           { $global:keyMap[$key] = 0x28 }
+                                "LEFT"           { $global:keyMap[$key] = 0x25 }
+                                "RIGHT"          { $global:keyMap[$key] = 0x27 }
+                                "ESC"            { $global:keyMap[$key] = 0x1B }
+                                "ENTER"          { $global:keyMap[$key] = 0x0D }
+                                "TAB"            { $global:keyMap[$key] = 0x09 }
+                                "SPACE"          { $global:keyMap[$key] = 0x20 }
+                                "BACKSPACE"      { $global:keyMap[$key] = 0x08 }
+                                "PAGEUP"         { $global:keyMap[$key] = 0x21 }
+                                "PAGEDOWN"       { $global:keyMap[$key] = 0x22 }
+                                "HOME"           { $global:keyMap[$key] = 0x24 }
+                                "END"            { $global:keyMap[$key] = 0x23 }
+                                "INSERT"         { $global:keyMap[$key] = 0x2D }
+                                "PLUS"           { $global:keyMap[$key] = 0x2B }
                                 "F1"             { $global:keyMap[$key] = 0x70 }
                                 "F2"             { $global:keyMap[$key] = 0x71 }
                                 "F3"             { $global:keyMap[$key] = 0x72 }
@@ -145,32 +145,66 @@ function Reload-ShortcutSettings {
                                 "F10"            { $global:keyMap[$key] = 0x79 }
                                 "F11"            { $global:keyMap[$key] = 0x7A }
                                 "F12"            { $global:keyMap[$key] = 0x7B }
-                                "Num0"           { $global:keyMap[$key] = 0x60 }
-                                "Num1"           { $global:keyMap[$key] = 0x61 }
-                                "Num2"           { $global:keyMap[$key] = 0x62 }
-                                "Num3"           { $global:keyMap[$key] = 0x63 }
-                                "Num4"           { $global:keyMap[$key] = 0x64 }
-                                "Num5"           { $global:keyMap[$key] = 0x65 }
-                                "Num6"           { $global:keyMap[$key] = 0x66 }
-                                "Num7"           { $global:keyMap[$key] = 0x67 }
-                                "Num8"           { $global:keyMap[$key] = 0x68 }
-                                "Num9"           { $global:keyMap[$key] = 0x69 }
-                                "NumLock"        { $global:keyMap[$key] = 0x90 }
-                                "NumpadDivide"   { $global:keyMap[$key] = 0x6F }
-                                "NumpadMultiply" { $global:keyMap[$key] = 0x6A }
-                                "NumpadSubtract" { $global:keyMap[$key] = 0x6D }
-                                "NumpadAdd"      { $global:keyMap[$key] = 0x6B }
-                                "NumpadEnter"    { $global:keyMap[$key] = 0x0D }
-                                "CapsLock"       { $global:keyMap[$key] = 0x14 }
-                                "ScrollLock"     { $global:keyMap[$key] = 0x91 }
-                                "PrintScreen"    { $global:keyMap[$key] = 0x2C }
-                                "PauseBreak"     { $global:keyMap[$key] = 0x13 }
-                                Default      {
-                                    if ([int][char]$key -ge 32 -and [int][char]$key -le 96) {
-                                        $global:keyMap[$key] = [int][char]$key
-                                    } else {
-                                        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Ignoring unsupported key '$key'."
-                                    }
+                                "NUM0"           { $global:keyMap[$key] = 0x60 }
+                                "NUM1"           { $global:keyMap[$key] = 0x61 }
+                                "NUM2"           { $global:keyMap[$key] = 0x62 }
+                                "NUM3"           { $global:keyMap[$key] = 0x63 }
+                                "NUM4"           { $global:keyMap[$key] = 0x64 }
+                                "NUM5"           { $global:keyMap[$key] = 0x65 }
+                                "NUM6"           { $global:keyMap[$key] = 0x66 }
+                                "NUM7"           { $global:keyMap[$key] = 0x67 }
+                                "NUM8"           { $global:keyMap[$key] = 0x68 }
+                                "NUM9"           { $global:keyMap[$key] = 0x69 }
+                                "NUMLOCK"        { $global:keyMap[$key] = 0x90 }
+                                "NUMPADDIVIDE"   { $global:keyMap[$key] = 0x6F }
+                                "NUMPADMULTIPLY" { $global:keyMap[$key] = 0x6A }
+                                "NUMPADSUBTRACT" { $global:keyMap[$key] = 0x6D }
+                                "NUMPADADD"      { $global:keyMap[$key] = 0x6B }
+                                "NUMPADENTER"    { $global:keyMap[$key] = 0x0D }
+                                "CAPSLOCK"       { $global:keyMap[$key] = 0x14 }
+                                "SCROLLLOCK"     { $global:keyMap[$key] = 0x91 }
+                                "PRINTSCREEN"    { $global:keyMap[$key] = 0x2C }
+                                "PAUSEBREAK"     { $global:keyMap[$key] = 0x13 }
+                                # CORRECTED SECTION: Explicit A-Z virtual-key code mappings
+                                "A" { $global:keyMap[$key] = 0x41 }
+                                "B" { $global:keyMap[$key] = 0x42 }
+                                "C" { $global:keyMap[$key] = 0x43 }
+                                "D" { $global:keyMap[$key] = 0x44 }
+                                "E" { $global:keyMap[$key] = 0x45 }
+                                "F" { $global:keyMap[$key] = 0x46 }
+                                "G" { $global:keyMap[$key] = 0x47 }
+                                "H" { $global:keyMap[$key] = 0x48 }
+                                "I" { $global:keyMap[$key] = 0x49 }
+                                "J" { $global:keyMap[$key] = 0x4A }
+                                "K" { $global:keyMap[$key] = 0x4B }
+                                "L" { $global:keyMap[$key] = 0x4C }
+                                "M" { $global:keyMap[$key] = 0x4D }
+                                "N" { $global:keyMap[$key] = 0x4E }
+                                "O" { $global:keyMap[$key] = 0x4F }
+                                "P" { $global:keyMap[$key] = 0x50 }
+                                "Q" { $global:keyMap[$key] = 0x51 }
+                                "R" { $global:keyMap[$key] = 0x52 }
+                                "S" { $global:keyMap[$key] = 0x53 }
+                                "T" { $global:keyMap[$key] = 0x54 }
+                                "U" { $global:keyMap[$key] = 0x55 }
+                                "V" { $global:keyMap[$key] = 0x56 }
+                                "W" { $global:keyMap[$key] = 0x57 }
+                                "X" { $global:keyMap[$key] = 0x58 }
+                                "Y" { $global:keyMap[$key] = 0x59 }
+                                "Z" { $global:keyMap[$key] = 0x5A }
+                                # Map numbers 0-9
+                                "0" { $global:keyMap[$key] = 0x30 }
+                                "1" { $global:keyMap[$key] = 0x31 }
+                                "2" { $global:keyMap[$key] = 0x32 }
+                                "3" { $global:keyMap[$key] = 0x33 }
+                                "4" { $global:keyMap[$key] = 0x34 }
+                                "5" { $global:keyMap[$key] = 0x35 }
+                                "6" { $global:keyMap[$key] = 0x36 }
+                                "7" { $global:keyMap[$key] = 0x37 }
+                                "8" { $global:keyMap[$key] = 0x38 }
+                                "9" { $global:keyMap[$key] = 0x39 }
+                                Default {
+                                    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Ignoring unsupported key '$key'."
                                 }
                             }
                         } catch {
@@ -379,7 +413,7 @@ function Start-ShortcutEditor {
     $buttonPanel = New-Object System.Windows.Forms.Panel
     $buttonPanel.Dock = "Bottom"
     $buttonPanel.Height = 60
-   
+    
     $saveButton = New-Object System.Windows.Forms.Button
     $saveButton.Text = "Save Changes"
     $saveButton.Width = 120
@@ -462,7 +496,7 @@ $contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $exitItem = $contextMenu.Items.Add("Exit")
 $exitItem.Add_Click({
     Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exiting application..."
-   
+    
     $logTimer.Stop()
 
     $trayIcon.Dispose()
