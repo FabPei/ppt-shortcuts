@@ -28,6 +28,12 @@ using System.Text;
 public class KeyboardListener {
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int vKey);
+
+    // FIX: Added VkKeyScan to translate a character to a virtual-key code.
+    // This respects the user's current keyboard layout (e.g., QWERTZ vs QWERTY)
+    // and resolves issues with keys like 'Y' and 'Z' on German keyboards.
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern short VkKeyScan(char ch);
 }
 
 public class WindowHelper {
@@ -48,15 +54,15 @@ public class WindowHelper {
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
 $global:keyMap = @{} 
 
-$instrumentaKeysVersion = "0.19"
+$instrumentaKeysVersion = "0.20"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
-Write-Host "██║██╔██╗ ██║███████╗   ██║   ██████╔╝██║   ██║██╔████╔██║█████╗  ██╔██╗ ██║   ██║   ███████║"
-Write-Host "██║██║╚██╗██║╚════██║   ██║   ██╔══██╗██║   ██║██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   ██╔══██║"
-Write-Host "██║██║ ╚████║███████║   ██║   ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   ██║  ██║"
-Write-Host "╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝"
-Write-Host "██╗  ██╗███████╗██╗   ██╗███████╗                                                           "
+Write-Host "██║██╔██╗ ██║███████╗   ██║    ██████╔╝██║   ██║██╔████╔██║█████╗  ██╔██╗ ██║   ██║    ███████║"
+Write-Host "██║██║╚██╗██║╚════██║   ██║    ██╔══██╗██║   ██║██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║    ██╔══██║"
+Write-Host "██║██║ ╚████║███████║   ██║    ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗██║ ╚████║   ██║    ██║  ██║"
+Write-Host "╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═╝  ╚═╝"
+Write-Host "██╗  ██╗███████╗██╗    ██╗███████╗                                                           "
 Write-Host "██║ ██╔╝██╔════╝╚██╗ ██╔╝██╔════╝                                                           "
 Write-Host "█████╔╝ █████╗   ╚████╔╝ ███████╗      Keyboard Shortcut Companion (v. $instrumentaKeysVersion)"
 Write-Host "██╔═██╗ ██╔══╝    ╚██╔╝  ╚════██║                                                           "
@@ -111,109 +117,86 @@ function Reload-ShortcutSettings {
                 $virtualKeys = @()
 
                 foreach ($key in $keyCombo) {
-                    if (-not $global:keyMap.ContainsKey($key)) {
+                    $trimmedKey = $key.Trim()
+                    if (-not $global:keyMap.ContainsKey($trimmedKey)) {
                         try {
-                            switch ($key.ToUpper()) { # Use .ToUpper() for case-insensitivity
-                                "CTRL"           { $global:keyMap[$key] = 0x11 }
-                                "SHIFT"          { $global:keyMap[$key] = 0x10 }
-                                "ALT"            { $global:keyMap[$key] = 0x12 }
-                                "DEL"            { $global:keyMap[$key] = 0x2E }
-                                "UP"             { $global:keyMap[$key] = 0x26 }
-                                "DOWN"           { $global:keyMap[$key] = 0x28 }
-                                "LEFT"           { $global:keyMap[$key] = 0x25 }
-                                "RIGHT"          { $global:keyMap[$key] = 0x27 }
-                                "ESC"            { $global:keyMap[$key] = 0x1B }
-                                "ENTER"          { $global:keyMap[$key] = 0x0D }
-                                "TAB"            { $global:keyMap[$key] = 0x09 }
-                                "SPACE"          { $global:keyMap[$key] = 0x20 }
-                                "BACKSPACE"      { $global:keyMap[$key] = 0x08 }
-                                "PAGEUP"         { $global:keyMap[$key] = 0x21 }
-                                "PAGEDOWN"       { $global:keyMap[$key] = 0x22 }
-                                "HOME"           { $global:keyMap[$key] = 0x24 }
-                                "END"            { $global:keyMap[$key] = 0x23 }
-                                "INSERT"         { $global:keyMap[$key] = 0x2D }
-                                "PLUS"           { $global:keyMap[$key] = 0x2B }
-                                "F1"             { $global:keyMap[$key] = 0x70 }
-                                "F2"             { $global:keyMap[$key] = 0x71 }
-                                "F3"             { $global:keyMap[$key] = 0x72 }
-                                "F4"             { $global:keyMap[$key] = 0x73 }
-                                "F5"             { $global:keyMap[$key] = 0x74 }
-                                "F6"             { $global:keyMap[$key] = 0x75 }
-                                "F7"             { $global:keyMap[$key] = 0x76 }
-                                "F8"             { $global:keyMap[$key] = 0x77 }
-                                "F9"             { $global:keyMap[$key] = 0x78 }
-                                "F10"            { $global:keyMap[$key] = 0x79 }
-                                "F11"            { $global:keyMap[$key] = 0x7A }
-                                "F12"            { $global:keyMap[$key] = 0x7B }
-                                "NUM0"           { $global:keyMap[$key] = 0x60 }
-                                "NUM1"           { $global:keyMap[$key] = 0x61 }
-                                "NUM2"           { $global:keyMap[$key] = 0x62 }
-                                "NUM3"           { $global:keyMap[$key] = 0x63 }
-                                "NUM4"           { $global:keyMap[$key] = 0x64 }
-                                "NUM5"           { $global:keyMap[$key] = 0x65 }
-                                "NUM6"           { $global:keyMap[$key] = 0x66 }
-                                "NUM7"           { $global:keyMap[$key] = 0x67 }
-                                "NUM8"           { $global:keyMap[$key] = 0x68 }
-                                "NUM9"           { $global:keyMap[$key] = 0x69 }
-                                "NUMLOCK"        { $global:keyMap[$key] = 0x90 }
-                                "NUMPADDIVIDE"   { $global:keyMap[$key] = 0x6F }
-                                "NUMPADMULTIPLY" { $global:keyMap[$key] = 0x6A }
-                                "NUMPADSUBTRACT" { $global:keyMap[$key] = 0x6D }
-                                "NUMPADADD"      { $global:keyMap[$key] = 0x6B }
-                                "NUMPADENTER"    { $global:keyMap[$key] = 0x0D }
-                                "CAPSLOCK"       { $global:keyMap[$key] = 0x14 }
-                                "SCROLLLOCK"     { $global:keyMap[$key] = 0x91 }
-                                "PRINTSCREEN"    { $global:keyMap[$key] = 0x2C }
-                                "PAUSEBREAK"     { $global:keyMap[$key] = 0x13 }
-                                # CORRECTED SECTION: Explicit A-Z virtual-key code mappings
-                                "A" { $global:keyMap[$key] = 0x41 }
-                                "B" { $global:keyMap[$key] = 0x42 }
-                                "C" { $global:keyMap[$key] = 0x43 }
-                                "D" { $global:keyMap[$key] = 0x44 }
-                                "E" { $global:keyMap[$key] = 0x45 }
-                                "F" { $global:keyMap[$key] = 0x46 }
-                                "G" { $global:keyMap[$key] = 0x47 }
-                                "H" { $global:keyMap[$key] = 0x48 }
-                                "I" { $global:keyMap[$key] = 0x49 }
-                                "J" { $global:keyMap[$key] = 0x4A }
-                                "K" { $global:keyMap[$key] = 0x4B }
-                                "L" { $global:keyMap[$key] = 0x4C }
-                                "M" { $global:keyMap[$key] = 0x4D }
-                                "N" { $global:keyMap[$key] = 0x4E }
-                                "O" { $global:keyMap[$key] = 0x4F }
-                                "P" { $global:keyMap[$key] = 0x50 }
-                                "Q" { $global:keyMap[$key] = 0x51 }
-                                "R" { $global:keyMap[$key] = 0x52 }
-                                "S" { $global:keyMap[$key] = 0x53 }
-                                "T" { $global:keyMap[$key] = 0x54 }
-                                "U" { $global:keyMap[$key] = 0x55 }
-                                "V" { $global:keyMap[$key] = 0x56 }
-                                "W" { $global:keyMap[$key] = 0x57 }
-                                "X" { $global:keyMap[$key] = 0x58 }
-                                "Y" { $global:keyMap[$key] = 0x59 }
-                                "Z" { $global:keyMap[$key] = 0x5A }
-                                # Map numbers 0-9
-                                "0" { $global:keyMap[$key] = 0x30 }
-                                "1" { $global:keyMap[$key] = 0x31 }
-                                "2" { $global:keyMap[$key] = 0x32 }
-                                "3" { $global:keyMap[$key] = 0x33 }
-                                "4" { $global:keyMap[$key] = 0x34 }
-                                "5" { $global:keyMap[$key] = 0x35 }
-                                "6" { $global:keyMap[$key] = 0x36 }
-                                "7" { $global:keyMap[$key] = 0x37 }
-                                "8" { $global:keyMap[$key] = 0x38 }
-                                "9" { $global:keyMap[$key] = 0x39 }
+                            # Map special keys by name, and all other character keys dynamically
+                            switch ($trimmedKey.ToUpper()) {
+                                "CTRL"           { $global:keyMap[$trimmedKey] = 0x11 }
+                                "SHIFT"          { $global:keyMap[$trimmedKey] = 0x10 }
+                                "ALT"            { $global:keyMap[$trimmedKey] = 0x12 }
+                                "DEL"            { $global:keyMap[$trimmedKey] = 0x2E }
+                                "UP"             { $global:keyMap[$trimmedKey] = 0x26 }
+                                "DOWN"           { $global:keyMap[$trimmedKey] = 0x28 }
+                                "LEFT"           { $global:keyMap[$trimmedKey] = 0x25 }
+                                "RIGHT"          { $global:keyMap[$trimmedKey] = 0x27 }
+                                "ESC"            { $global:keyMap[$trimmedKey] = 0x1B }
+                                "ENTER"          { $global:keyMap[$trimmedKey] = 0x0D }
+                                "TAB"            { $global:keyMap[$trimmedKey] = 0x09 }
+                                "SPACE"          { $global:keyMap[$trimmedKey] = 0x20 }
+                                "BACKSPACE"      { $global:keyMap[$trimmedKey] = 0x08 }
+                                "PAGEUP"         { $global:keyMap[$trimmedKey] = 0x21 }
+                                "PAGEDOWN"       { $global:keyMap[$trimmedKey] = 0x22 }
+                                "HOME"           { $global:keyMap[$trimmedKey] = 0x24 }
+                                "END"            { $global:keyMap[$trimmedKey] = 0x23 }
+                                "INSERT"         { $global:keyMap[$trimmedKey] = 0x2D }
+                                "F1"             { $global:keyMap[$trimmedKey] = 0x70 }
+                                "F2"             { $global:keyMap[$trimmedKey] = 0x71 }
+                                "F3"             { $global:keyMap[$trimmedKey] = 0x72 }
+                                "F4"             { $global:keyMap[$trimmedKey] = 0x73 }
+                                "F5"             { $global:keyMap[$trimmedKey] = 0x74 }
+                                "F6"             { $global:keyMap[$trimmedKey] = 0x75 }
+                                "F7"             { $global:keyMap[$trimmedKey] = 0x76 }
+                                "F8"             { $global:keyMap[$trimmedKey] = 0x77 }
+                                "F9"             { $global:keyMap[$trimmedKey] = 0x78 }
+                                "F10"            { $global:keyMap[$trimmedKey] = 0x79 }
+                                "F11"            { $global:keyMap[$trimmedKey] = 0x7A }
+                                "F12"            { $global:keyMap[$trimmedKey] = 0x7B }
+                                "NUM0"           { $global:keyMap[$trimmedKey] = 0x60 }
+                                "NUM1"           { $global:keyMap[$trimmedKey] = 0x61 }
+                                "NUM2"           { $global:keyMap[$trimmedKey] = 0x62 }
+                                "NUM3"           { $global:keyMap[$trimmedKey] = 0x63 }
+                                "NUM4"           { $global:keyMap[$trimmedKey] = 0x64 }
+                                "NUM5"           { $global:keyMap[$trimmedKey] = 0x65 }
+                                "NUM6"           { $global:keyMap[$trimmedKey] = 0x66 }
+                                "NUM7"           { $global:keyMap[$trimmedKey] = 0x67 }
+                                "NUM8"           { $global:keyMap[$trimmedKey] = 0x68 }
+                                "NUM9"           { $global:keyMap[$trimmedKey] = 0x69 }
+                                "NUMLOCK"        { $global:keyMap[$trimmedKey] = 0x90 }
+                                "NUMPADDIVIDE"   { $global:keyMap[$trimmedKey] = 0x6F }
+                                "NUMPADMULTIPLY" { $global:keyMap[$trimmedKey] = 0x6A }
+                                "NUMPADSUBTRACT" { $global:keyMap[$trimmedKey] = 0x6D }
+                                "NUMPADADD"      { $global:keyMap[$trimmedKey] = 0x6B }
+                                "NUMPADENTER"    { $global:keyMap[$trimmedKey] = 0x0D }
+                                "CAPSLOCK"       { $global:keyMap[$trimmedKey] = 0x14 }
+                                "SCROLLLOCK"     { $global:keyMap[$trimmedKey] = 0x91 }
+                                "PRINTSCREEN"    { $global:keyMap[$trimmedKey] = 0x2C }
+                                "PAUSEBREAK"     { $global:keyMap[$trimmedKey] = 0x13 }
                                 Default {
-                                    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Ignoring unsupported key '$key'."
+                                    # FIX: Dynamically map character keys (A-Z, 0-9, symbols) using the current keyboard layout.
+                                    # This replaces the hardcoded list and fixes the Y/Z issue on German keyboards.
+                                    if ($trimmedKey.Length -eq 1) {
+                                        $char = $trimmedKey[0]
+                                        $vkScanResult = [KeyboardListener]::VkKeyScan($char)
+                                        if ($vkScanResult -ne -1) {
+                                            # The virtual key code is in the low byte of the result
+                                            $vkCode = $vkScanResult -band 0xFF
+                                            $global:keyMap[$trimmedKey] = $vkCode
+                                        } else {
+                                            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - WARNING: Could not map character '$trimmedKey' to a virtual key."
+                                        }
+                                    } else {
+                                        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Ignoring unsupported key '$trimmedKey'."
+                                    }
                                 }
                             }
                         } catch {
-                            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to process key '$key' in shortcut '$entry.Key'."
+                            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - ERROR: Failed to process key '$trimmedKey' in shortcut '$($entry.Key)'."
                         }
                     }
 
-                    if ($global:keyMap.ContainsKey($key)) {
-                        $virtualKeys += $global:keyMap[$key]
+                    if ($global:keyMap.ContainsKey($trimmedKey)) {
+                        $virtualKeys += $global:keyMap[$trimmedKey]
                     }
                 }
 
@@ -613,7 +596,7 @@ function Start-ShortcutDetection {
         }
 
         $waiting = $true
-        $inPresentationMode = $false      
+        $inPresentationMode = $false     
 
         while ($true) {
             $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
@@ -654,6 +637,7 @@ function Start-ShortcutDetection {
             }
 
             $pressedKeys = @()
+            $currentTime = (Get-Date).Ticks / [System.TimeSpan]::TicksPerMillisecond
             foreach ($key in $globalKeyMap.Keys) {  
                 $keyInt = [int]$globalKeyMap[$key]  
                 $state = [KeyboardListener]::GetAsyncKeyState($keyInt)
@@ -669,9 +653,10 @@ function Start-ShortcutDetection {
             foreach ($virtualKeyCombo in $shortcuts.Keys) {
 
                 $keys = $virtualKeyCombo -split ' '
-                $allPressed = -not (Compare-Object -ReferenceObject $pressedKeys -DifferenceObject $keys)
+                # Compare-Object returns null if collections are identical
+                $allPressed = $null -eq (Compare-Object -ReferenceObject $pressedKeys -DifferenceObject $keys -PassThru | Where-Object { $_ -in $keys })
 
-                if ($allPressed) {
+                if ($allPressed -and $pressedKeys.Count -eq $keys.Count) {
                     $macroName = $shortcuts[$virtualKeyCombo]
                     
                     if ($macroName -eq "InstrumentaKeysEditor") {
