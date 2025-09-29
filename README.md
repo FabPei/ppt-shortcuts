@@ -382,6 +382,9 @@ Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://
 | Update position and dimensions of selected multislide shape on all slides | UpdateTaggedShapePositionAndDimensions | 
 
 29.09. Custom subs: 
+
+| Label | Description | onAction |
+| :--- | :--- | :--- |
 | Send Object to Back | Send Object to Back | SendToBack |
 | Send Object one Layer Back  | Send Object one Layer Back | SendBackward |
 | Send Object to Front| Send Object to Front| BringToFront |
