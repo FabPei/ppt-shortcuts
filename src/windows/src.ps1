@@ -10,7 +10,7 @@
 # furnished to do so, subject to the following conditions:
 # 
 # The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# copies of a substantial portions of the Software.
 # 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -29,9 +29,6 @@ public class KeyboardListener {
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int vKey);
 
-    // FIX: Added VkKeyScan to translate a character to a virtual-key code.
-    // This respects the user's current keyboard layout (e.g., QWERTZ vs QWERTY)
-    // and resolves issues with keys like 'Y' and 'Z' on German keyboards.
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern short VkKeyScan(char ch);
 }
@@ -54,7 +51,7 @@ public class WindowHelper {
 $global:hWnd = [WindowHelper]::GetForegroundWindow()
 $global:keyMap = @{} 
 
-$instrumentaKeysVersion = "0.20"
+$instrumentaKeysVersion = "0.27"
 
 Write-Host "██╗███╗   ██╗███████╗████████╗██████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ "
 Write-Host "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗"
@@ -173,13 +170,10 @@ function Reload-ShortcutSettings {
                                 "PRINTSCREEN"    { $global:keyMap[$trimmedKey] = 0x2C }
                                 "PAUSEBREAK"     { $global:keyMap[$trimmedKey] = 0x13 }
                                 Default {
-                                    # FIX: Dynamically map character keys (A-Z, 0-9, symbols) using the current keyboard layout.
-                                    # This replaces the hardcoded list and fixes the Y/Z issue on German keyboards.
                                     if ($trimmedKey.Length -eq 1) {
                                         $char = $trimmedKey[0]
                                         $vkScanResult = [KeyboardListener]::VkKeyScan($char)
                                         if ($vkScanResult -ne -1) {
-                                            # The virtual key code is in the low byte of the result
                                             $vkCode = $vkScanResult -band 0xFF
                                             $global:keyMap[$trimmedKey] = $vkCode
                                         } else {
@@ -229,7 +223,105 @@ function Reload-ShortcutSettings {
 
 Reload-ShortcutSettings
 
-function Export-Shortcuts {
+function Export-PowerPointMacros {
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Attempting to list all available PowerPoint macros..."
+    
+    try {
+        $ppt = [System.Runtime.Interopservices.Marshal]::GetActiveObject("PowerPoint.Application")
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Could not connect to a running PowerPoint instance. Please make sure PowerPoint is open.", "Connection Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+        return
+    }
+
+    $macroList = New-Object System.Collections.ArrayList
+    # Corrected constant for finding procedures (Subs/Functions).
+    $vbext_pk_Proc = 0 
+
+    try {
+        $vbe = $ppt.VBE
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Could not access the VBA Project Model (VBE).`nPlease ensure 'Trust access to the VBA project object model' is enabled in PowerPoint's Trust Center Settings.", "VBE Access Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+        return
+    }
+
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Searching for macros in all loaded VB Projects (Add-ins and Presentations)..."
+    foreach ($vbProject in $vbe.VBProjects) {
+        $sourceName = try { [System.IO.Path]::GetFileName($vbProject.FileName) } catch { $vbProject.Name }
+        try {
+            foreach ($component in $vbProject.VBComponents) {
+                $codeModule = $component.CodeModule
+                if ($null -eq $codeModule -Or $codeModule.CountOfLines -eq 0) { continue }
+
+                $lineNum = 1
+                while ($lineNum -le $codeModule.CountOfLines) {
+                    $procName = $codeModule.ProcOfLine($lineNum, [ref]$vbext_pk_Proc)
+                    if ($null -ne $procName) {
+                        $procStartLine = $codeModule.ProcStartLine($procName, [ref]$vbext_pk_Proc)
+                        $procBodyLineCount = $codeModule.ProcCountLines($procName, [ref]$vbext_pk_Proc)
+                        $declaration = $codeModule.Lines($procStartLine, 1).Trim()
+                        
+                        if ($declaration -match '^(Public\s+)?Sub\s+' -and $declaration -notmatch '^Private\s+Sub\s+' -and $declaration -match '\(\s*\)$') {
+                            $macroList.Add([PSCustomObject]@{
+                                Source     = $sourceName
+                                Module     = $component.Name
+                                MacroName  = $procName
+                            }) | Out-Null
+                        }
+                        
+                        $lineNum = $procStartLine + $procBodyLineCount
+                    } else {
+                        $lineNum++
+                    }
+                }
+            }
+        } catch {
+             Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Warning: Could not inspect project '$($sourceName)'. It might be protected."
+        }
+    }
+
+    if ($macroList.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("No runnable macros were found in loaded add-ins or open presentations. Note: Only public subs without arguments are listed.", "No Macros Found", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+        return
+    }
+
+    # --- Display Form ---
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Available PowerPoint Macros"
+    $form.Width = 800
+    $form.Height = 500
+    $form.StartPosition = "CenterScreen"
+    $form.TopMost = $true
+
+    $grid = New-Object System.Windows.Forms.DataGridView
+    $grid.Dock = "Fill"
+    $grid.DataSource = $macroList
+    $grid.AutoSizeColumnsMode = "Fill"
+    $grid.AllowUserToAddRows = $false
+    $grid.ReadOnly = $true
+
+    $exportButton = New-Object System.Windows.Forms.Button
+    $exportButton.Text = "Export to CSV"
+    $exportButton.Dock = "Bottom"
+    $exportButton.Height = 30
+    $exportButton.Add_Click({
+        $saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+        $saveFileDialog.Filter = "CSV file (*.csv)|*.csv"
+        $saveFileDialog.Title = "Export Macros As"
+        if ($saveFileDialog.ShowDialog() -eq "OK") {
+            $macroList | Export-Csv -Path $saveFileDialog.FileName -NoTypeInformation
+            [System.Windows.Forms.MessageBox]::Show("Macro list exported successfully!", "Export Complete")
+        }
+    })
+
+    $form.Controls.Add($grid)
+    $form.Controls.Add($exportButton)
+    $exePath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+    $form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exePath)
+    $form.ShowDialog()
+}
+
+function Export-ShortcutsToFile {
+    param($grid)
     $saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
     $saveFileDialog.InitialDirectory = [System.Environment]::GetFolderPath("Desktop")
     $saveFileDialog.Filter = "CSV Files (*.csv)|*.csv"
@@ -251,7 +343,8 @@ function Export-Shortcuts {
     }
 }
 
-function Import-Shortcuts {
+function Import-ShortcutsFromFile {
+    param($grid)
     $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
     $openFileDialog.InitialDirectory = [System.Environment]::GetFolderPath("Desktop")
     $openFileDialog.Filter = "CSV Files (*.csv)|*.csv"
@@ -277,7 +370,8 @@ function Import-Shortcuts {
     }
 }
 
-function Import-ShortcutsFromGitHub {
+function Import-ShortcutsFromGitHubRepo {
+    param($grid)
     $repoUrl = "https://api.github.com/repos/iappyx/Instrumenta-Keys/contents/shared-shortcuts/windows/"
 
     try {
@@ -354,9 +448,9 @@ function Start-ShortcutEditor {
     Add-Type -AssemblyName System.Drawing
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Shortcut editor"
-    $form.Width = 700
-    $form.Height = 400
+    $form.Text = "Shortcut Editor"
+    $form.Width = 720
+    $form.Height = 580
     $form.StartPosition = "CenterScreen"
     $form.TopMost = $true 
 
@@ -365,7 +459,7 @@ function Start-ShortcutEditor {
 
     $gridPanel = New-Object System.Windows.Forms.Panel
     $gridPanel.Dock = "Fill"
-    $gridPanel.Padding = New-Object System.Windows.Forms.Padding(20)
+    $gridPanel.Padding = New-Object System.Windows.Forms.Padding(20, 20, 20, 10)
 
     $grid = New-Object System.Windows.Forms.DataGridView
     $grid.Dock = "Fill"
@@ -393,16 +487,116 @@ function Start-ShortcutEditor {
     }
 
     $gridPanel.Controls.Add($grid)
+    
+    # --- Panel for existing buttons (Save, Import, etc.) ---
     $buttonPanel = New-Object System.Windows.Forms.Panel
     $buttonPanel.Dock = "Bottom"
-    $buttonPanel.Height = 60
-    
-    $saveButton = New-Object System.Windows.Forms.Button
-    $saveButton.Text = "Save Changes"
-    $saveButton.Width = 120
-    $saveButton.Location = New-Object System.Drawing.Point(410, 5)
-    $saveButton.Anchor = "Bottom, Left"
+    $buttonPanel.Height = 80
+    $buttonPanel.Padding = New-Object System.Windows.Forms.Padding(20, 0, 20, 10)
 
+    # --- Panel for adding new shortcuts ---
+    $addPanel = New-Object System.Windows.Forms.Panel
+    $addPanel.Dock = "Bottom"
+    $addPanel.Height = 110
+    $addPanel.Padding = New-Object System.Windows.Forms.Padding(20, 10, 20, 10)
+
+    # --- GroupBox for the Add Panel for better visual separation ---
+    $addGroupBox = New-Object System.Windows.Forms.GroupBox
+    $addGroupBox.Text = "Add New Shortcut"
+    $addGroupBox.Dock = "Fill"
+
+    # --- Controls for the Add GroupBox ---
+    $ctrlCheckbox = New-Object System.Windows.Forms.CheckBox; $ctrlCheckbox.Text = "Ctrl"; $ctrlCheckbox.Location = New-Object System.Drawing.Point(15, 30); $ctrlCheckbox.AutoSize = $true
+    $altCheckbox = New-Object System.Windows.Forms.CheckBox; $altCheckbox.Text = "Alt"; $altCheckbox.Location = New-Object System.Drawing.Point(75, 30); $altCheckbox.AutoSize = $true
+    $shiftCheckbox = New-Object System.Windows.Forms.CheckBox; $shiftCheckbox.Text = "Shift"; $shiftCheckbox.Location = New-Object System.Drawing.Point(135, 30); $shiftCheckbox.AutoSize = $true
+
+    $keyLabel = New-Object System.Windows.Forms.Label; $keyLabel.Text = "Key:"; $keyLabel.Location = New-Object System.Drawing.Point(210, 33); $keyLabel.AutoSize = $true
+    $keyComboBox = New-Object System.Windows.Forms.ComboBox; $keyComboBox.Location = New-Object System.Drawing.Point(245, 30); $keyComboBox.Width = 100
+    
+    $keyList = @(
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+        'UP', 'DOWN', 'LEFT', 'RIGHT',
+        'ENTER', 'ESC', 'TAB', 'SPACE', 'BACKSPACE', 'DEL', 'INSERT', 'HOME', 'END', 'PAGEUP', 'PAGEDOWN'
+    )
+    $keyList | ForEach-Object { $keyComboBox.Items.Add($_) | Out-Null }
+
+    $macroLabel = New-Object System.Windows.Forms.Label; $macroLabel.Text = "Macro:"; $macroLabel.Location = New-Object System.Drawing.Point(365, 33); $macroLabel.AutoSize = $true
+    $macroTextBox = New-Object System.Windows.Forms.TextBox; $macroTextBox.Location = New-Object System.Drawing.Point(415, 30); $macroTextBox.Width = 240
+    $macroTextBox.Anchor = "Top, Left, Right"
+
+    $addButton = New-Object System.Windows.Forms.Button
+    $addButton.Text = "Add Shortcut"
+    $addButton.Width = 120
+    $addButton.Location = New-Object System.Drawing.Point(15, 65)
+
+    $addButton.Add_Click({
+        $shortcutParts = New-Object System.Collections.ArrayList
+        if ($ctrlCheckbox.Checked) { [void]$shortcutParts.Add("Ctrl") }
+        if ($altCheckbox.Checked) { [void]$shortcutParts.Add("Alt") }
+        if ($shiftCheckbox.Checked) { [void]$shortcutParts.Add("Shift") }
+
+        if ($keyComboBox.SelectedItem) {
+            [void]$shortcutParts.Add($keyComboBox.SelectedItem)
+        } else {
+            [System.Windows.Forms.MessageBox]::Show("Please select a key.", "Input Error")
+            return
+        }
+
+        $macroName = $macroTextBox.Text.Trim()
+        if ([string]::IsNullOrWhiteSpace($macroName)) {
+            [System.Windows.Forms.MessageBox]::Show("Please enter a macro name.", "Input Error")
+            return
+        }
+
+        $shortcutString = $shortcutParts -join "+"
+        [void]$grid.Rows.Add($shortcutString, $macroName)
+
+        # Clear inputs for next entry
+        $ctrlCheckbox.Checked = $false
+        $altCheckbox.Checked = $false
+        $shiftCheckbox.Checked = $false
+        $keyComboBox.SelectedIndex = -1
+        $macroTextBox.Text = ""
+    })
+
+    $addGroupBox.Controls.AddRange(@($ctrlCheckbox, $altCheckbox, $shiftCheckbox, $keyLabel, $keyComboBox, $macroLabel, $macroTextBox, $addButton))
+    $addPanel.Controls.Add($addGroupBox)
+
+    # --- GroupBox for the action buttons ---
+    $actionsGroupBox = New-Object System.Windows.Forms.GroupBox
+    $actionsGroupBox.Text = "Actions"
+    $actionsGroupBox.Dock = "Fill"
+
+    # --- TableLayoutPanel to enforce button alignment ---
+    $actionTable = New-Object System.Windows.Forms.TableLayoutPanel
+    $actionTable.Dock = "Fill"
+    $actionTable.ColumnCount = 5 # 3 buttons, 1 spacer, 1 button
+    $actionTable.RowCount = 1
+    
+    $actionTable.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+    $actionTable.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+    $actionTable.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+    $actionTable.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100))) # Spacer
+    $actionTable.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::AutoSize)))
+    
+    $actionTable.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+
+    # --- Controls for the Actions Table ---
+    $buttonWidth = 120
+    $buttonHeight = 30
+    $buttonMargin = New-Object System.Windows.Forms.Padding(0, 0, 10, 0)
+
+    $importButton = New-Object System.Windows.Forms.Button; $importButton.Text = "Import Shortcuts"; $importButton.Size = New-Object System.Drawing.Size($buttonWidth, $buttonHeight); $importButton.Margin = $buttonMargin
+    $exportButton = New-Object System.Windows.Forms.Button; $exportButton.Text = "Export Shortcuts"; $exportButton.Size = New-Object System.Drawing.Size($buttonWidth, $buttonHeight); $exportButton.Margin = $buttonMargin
+    $importGitHubButton = New-Object System.Windows.Forms.Button; $importGitHubButton.Text = "Import from GitHub"; $importGitHubButton.Size = New-Object System.Drawing.Size($buttonWidth, $buttonHeight); $importGitHubButton.Margin = $buttonMargin
+    $saveButton = New-Object System.Windows.Forms.Button; $saveButton.Text = "Save Changes"; $saveButton.Size = New-Object System.Drawing.Size($buttonWidth, $buttonHeight)
+
+    $importButton.Add_Click({ Import-ShortcutsFromFile -grid $grid })
+    $exportButton.Add_Click({ Export-ShortcutsToFile -grid $grid })
+    $importGitHubButton.Add_Click({ Import-ShortcutsFromGitHubRepo -grid $grid })
     $saveButton.Add_Click({
         Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Saving shortcut changes..."
         $newData = New-Object System.Collections.ArrayList  
@@ -423,32 +617,18 @@ function Start-ShortcutEditor {
         Reload-ShortcutSettings
     })
 
-    $importButton = New-Object System.Windows.Forms.Button
-    $importButton.Text = "Import Shortcuts"
-    $importButton.Width = 120
-    $importButton.Location = New-Object System.Drawing.Point(20, 5)
-    $importButton.Anchor = "Bottom, Left"
-    $importButton.Add_Click({ Import-Shortcuts })
+    # Add buttons to the table cells
+    $actionTable.Controls.Add($importButton, 0, 0)
+    $actionTable.Controls.Add($exportButton, 1, 0)
+    $actionTable.Controls.Add($importGitHubButton, 2, 0)
+    $actionTable.Controls.Add($saveButton, 4, 0)
+    
+    $actionsGroupBox.Controls.Add($actionTable)
+    $buttonPanel.Controls.Add($actionsGroupBox)
 
-    $exportButton = New-Object System.Windows.Forms.Button
-    $exportButton.Text = "Export Shortcuts"
-    $exportButton.Width = 120
-    $exportButton.Location = New-Object System.Drawing.Point(150, 5)
-    $exportButton.Anchor = "Bottom, Left"
-    $exportButton.Add_Click({ Export-Shortcuts })
-
-    $importGitHubButton = New-Object System.Windows.Forms.Button
-    $importGitHubButton.Text = "Import from GitHub"
-    $importGitHubButton.Width = 120
-    $importGitHubButton.Location = New-Object System.Drawing.Point(280, 5)
-    $importGitHubButton.Anchor = "Bottom, Left"
-    $importGitHubButton.Add_Click({ Import-ShortcutsFromGitHub })
-
-    $buttonPanel.Controls.Add($importGitHubButton)
-    $buttonPanel.Controls.Add($importButton)
-    $buttonPanel.Controls.Add($exportButton)
-    $buttonPanel.Controls.Add($saveButton)
+    # Add panels to mainPanel in REVERSE order of appearance (bottom-most first)
     $mainPanel.Controls.Add($gridPanel)
+    $mainPanel.Controls.Add($addPanel)
     $mainPanel.Controls.Add($buttonPanel)
 
     $form.Controls.Add($mainPanel)
@@ -457,7 +637,7 @@ function Start-ShortcutEditor {
     $form.ShowDialog() | Out-Null
 }
 
-Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Listening for shortcuts, and hiding this window to the systray in three seconds" -NoNewline
+Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Listening for shortcuts, and hiding this window to the systray in one second" -NoNewline
 for ($i = 1; $i -le 3; $i++) {
     Start-Sleep -Seconds 1
     Write-Host "." -NoNewline
@@ -476,46 +656,52 @@ $trayIcon.Visible = $true
 
 $contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
 
-$exitItem = $contextMenu.Items.Add("Exit")
-$exitItem.Add_Click({
-    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exiting application..."
-    
-    $logTimer.Stop()
-
-    $trayIcon.Dispose()
-    
-    [System.Windows.Forms.Application]::Exit()
-    Stop-Process -Id $PID -Force 
-})
-
+# REARRANGED MENU ITEMS FOR BETTER UX
 $editorItem = $contextMenu.Items.Add("Shortcut Editor")
-$editorItem.Add_Click({
-    Start-ShortcutEditor 
-})
+$editorItem.Add_Click({ Start-ShortcutEditor })
 
 $toggleWindowItem = $contextMenu.Items.Add("Show/Hide Window")
 $toggleWindowItem.Add_Click({
-    $windowState = [WindowHelper]::ShowWindow($global:hWnd, 0)
-    
-    if ($windowState -eq 0) {
-        [WindowHelper]::ShowWindow($global:hWnd, 9)
-        [WindowHelper]::SetForegroundWindow($global:hWnd)
+    $process = Get-Process -Id $PID
+    $hWndToShow = if ($process.MainWindowHandle -ne [System.IntPtr]::Zero) { $process.MainWindowHandle } else { $global:hWnd }
+
+    # Use IsWindowVisible API for a reliable check
+    Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);' -Name WinAPI -Namespace User32
+    $isVisible = [User32.WinAPI]::IsWindowVisible($hWndToShow)
+
+    if ($isVisible) {
+        [WindowHelper]::ShowWindow($hWndToShow, 0) # Hide
     } else {
-        [WindowHelper]::ShowWindow($global:hWnd, 0)
+        [WindowHelper]::ShowWindow($hWndToShow, 9) # Restore
+        [WindowHelper]::SetForegroundWindow($hWndToShow)
     }
 })
+
+$contextMenu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
 
 $showShortcutsItem = $contextMenu.Items.Add("Available shortcuts")
 $showShortcutsItem.Add_Click({
     $shortcutText = "Shortcuts and actions:`n`n"
-
     foreach ($shortcut in $shortcuts.Keys) {
         $friendlyName = $friendlyShortcuts[$shortcut]
         $macroName = $shortcuts[$shortcut]
         $shortcutText += "$friendlyName → $macroName`n"
     }
-
     [System.Windows.Forms.MessageBox]::Show($shortcutText, "Shortcut list", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+})
+
+$listMacrosItem = $contextMenu.Items.Add("List PowerPoint Macros")
+$listMacrosItem.Add_Click({ Export-PowerPointMacros })
+
+$contextMenu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
+
+$exitItem = $contextMenu.Items.Add("Exit")
+$exitItem.Add_Click({
+    Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Exiting application..."
+    $logTimer.Stop()
+    $trayIcon.Dispose()
+    [System.Windows.Forms.Application]::Exit()
+    Stop-Process -Id $PID -Force 
 })
 
 $trayIcon.ContextMenuStrip = $contextMenu
@@ -653,7 +839,6 @@ function Start-ShortcutDetection {
             foreach ($virtualKeyCombo in $shortcuts.Keys) {
 
                 $keys = $virtualKeyCombo -split ' '
-                # Compare-Object returns null if collections are identical
                 $allPressed = $null -eq (Compare-Object -ReferenceObject $pressedKeys -DifferenceObject $keys -PassThru | Where-Object { $_ -in $keys })
 
                 if ($allPressed -and $pressedKeys.Count -eq $keys.Count) {
@@ -674,7 +859,7 @@ function Start-ShortcutDetection {
 
                     }
 
-                    Start-Sleep -Milliseconds 300
+                    Start-Sleep -Milliseconds 100
                     break
                 }
             }
@@ -699,3 +884,4 @@ function Start-ShortcutDetection {
 $ShortcutDetectionHandle = Start-ShortcutDetection -globalKeyMap $global:keyMap -shortcuts $shortcuts -friendlyShortcuts $friendlyShortcuts
 
 [System.Windows.Forms.Application]::Run()
+
