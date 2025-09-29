@@ -380,3 +380,69 @@ Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://
 | Insert NonBreakingSpace | TextInsertNoBreakSpace | 
 | Unlock position of all shapes on all slides | UnLockAllShapesOnAllSlides | 
 | Update position and dimensions of selected multislide shape on all slides | UpdateTaggedShapePositionAndDimensions | 
+
+## Standard Powerpoint shortcuts
+| Keyboard Shortcut | Description |
+| :--- | :--- |
+| **Ctrl+N** | Create a new presentation |
+| **Alt+A** | Open the **Animations** tab |
+| **Alt+G** | Open the **Design** tab |
+| **Alt+H** | Open the **Home** tab |
+| **Alt+K** | Open the **Transitions** tab |
+| **Alt+N** | Open the **Insert** tab |
+| **Alt+Q** | **Search** |
+| **Alt+R** | Open the **Review** tab |
+| **Alt+S** | Open the **Slide Show** tab |
+| **Alt+W** | Open the **View** tab |
+| **Arrow Keys** | Move the selected object slightly |
+| **Ctrl+A** | Select **all** objects on the current slide |
+| **Ctrl+Arrow Keys** | **Nudge** the selected object |
+| **Ctrl+B** | **Bold** selected text |
+| **Ctrl+C** | **Copy** selected object(s) or text |
+| **Ctrl+D** | **Duplicate** the selected slide(s) |
+| **Ctrl+E** | **Center** align text |
+| **Ctrl+F** | **Find** text |
+| **Ctrl+F1** | Show or hide the **Ribbon** |
+| **Ctrl+F2** | Open **Print Preview** |
+| **Ctrl+F4** | **Close** the current presentation |
+| **Ctrl+F6** | **Switch** between open presentations |
+| **Ctrl+G** | **Group** selected objects |
+| **Ctrl+H** | **Replace** text |
+| **Ctrl+I** | **Italicize** selected text |
+| **Ctrl+J** | **Justify** text |
+| **Ctrl+K** | Insert a **hyperlink** |
+| **Ctrl+L** | **Left** align text |
+| **Ctrl+M** | Insert a **new slide** |
+| **Ctrl+O** | **Open** an existing presentation |
+| **Ctrl+P** | Open the **Print** dialog |
+| **Ctrl+Q** | **Close** the current presentation |
+| **Ctrl+R** | **Right** align text |
+| **Ctrl+S** | **Save** the presentation |
+| **Ctrl+Shift+<** | **Decrease** font size |
+| **Ctrl+Shift+>** | **Increase** font size |
+| **Ctrl+Shift+C** | **Copy formatting** of an object |
+| **Ctrl+Shift+D** | **Duplicate** selected slide(s) |
+| **Ctrl+Shift+F** | Open the **Font** dialog |
+| **Ctrl+Shift+G** | **Ungroup** grouped objects |
+| **Ctrl+Shift+H** | Show **Notes** (Tab) |
+| **Ctrl+Shift+P** | Open the **Paragraph** dialog |
+| **Ctrl+Shift+V** | **Paste formatting** to an object |
+| **Ctrl+T** | Open the **Font** dialog box |
+| **Ctrl+U** | **Underline** selected text |
+| **Ctrl+V** | **Paste** copied or cut content |
+| **Ctrl+W** | **Close** the current presentation |
+| **Ctrl+X** | **Cut** selected object(s) or text |
+| **Ctrl+Y** | **Redo** the last action |
+| **Ctrl+Z** | **Undo** the last action |
+| **Delete** | **Delete** the selected object or text |
+| **End** | Go to the **last** slide |
+| **Esc** | **End** the slideshow |
+| **F12** | Open the **Save As** dialog box |
+| **F5** | **Start the slideshow** from the beginning |
+| **Home** | Go to the **first** slide |
+| **Page Down** | Go to the **next** slide |
+| **Page Up** | Go to the **previous** slide |
+| **Shift+F3** | **Change the case** of selected text |
+| **Shift+F5** | **Start the slideshow** from the current slide |
+| **Shift+Tab** | Move to the **previous** field or object |
+| **Tab** | Move to the **next** field or object |
