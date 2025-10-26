@@ -382,8 +382,7 @@ Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://
 | Unlock position of all shapes on all slides | UnLockAllShapesOnAllSlides | 
 | Update position and dimensions of selected multislide shape on all slides | UpdateTaggedShapePositionAndDimensions | 
 
-29.09. Custom subs: 
-
+## 29.09. Custom subs: 
 | Label | Description | onAction |
 | :--- | :--- | :--- |
 | Send Object to Back | Send Object to Back | SendToBack |
@@ -393,7 +392,7 @@ Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://
 | ApplyPixelColorToFill | Applys fill color of the current mouse pixel to selected objects | ApplyPixelColorToFill |
 | ApplyPixelColorToOutline | Applys line color of the current mouse pixel to selected objects | ApplyPixelColorToOutline |
 
-26.10. Custom subs: 
+## 26.10. Custom subs: 
 | Label | Description | onAction |
 | :--- | :--- | :--- |
 | StretchToBottom | Stretch selected Shapes to the bottom edge of the last selected object | StretchToBottom |
