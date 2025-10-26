@@ -391,7 +391,19 @@ Instrumenta Keys is a **keyboard shortcut companion** for [Instrumenta](https://
 | Send Object to Front| Send Object to Front| BringToFront |
 | Send Object one Layer Forward  | Send Object one Layer Forward  | BringForward |
 | ApplyPixelColorToFill | Applys fill color of the current mouse pixel to selected objects | ApplyPixelColorToFill |
-| ApplyPixelColorToOutline | Applys line color of the current mouse pixel to selected objects  | ApplyPixelColorToOutline |
+| ApplyPixelColorToOutline | Applys line color of the current mouse pixel to selected objects | ApplyPixelColorToOutline |
+
+26.10. Custom subs: 
+| Label | Description | onAction |
+| :--- | :--- | :--- |
+| StretchToBottom | Stretch selected Shapes to the bottom edge of the last selected object | StretchToBottom |
+| StretchToTop | Stretch selected Shapes to the Top edge of the last selected object | StretchToTop |
+| StretchToRight | Stretch selected Shapes to the right edge of the last selected object | StretchToRight |
+| StretchToLeft | Stretch selected Shapes to the left edge of the last selected object | StretchToLeft |
+| ScaleSelectionRelative | Scales the current selection (also font) based on the given percentage | ScaleSelectionRelative |
+| ShowSaveOrSendForm | Opens the form for the save of sending window for pptx, pdfs and mail | ShowSaveOrSendForm |
+| ShowSplitShapeWithForm | Opens the form for splitting an object into more objects | ShowSplitShapeWithForm |
+
 ## Standard Powerpoint shortcuts
 | Keyboard Shortcut | Description |
 | :--- | :--- |
